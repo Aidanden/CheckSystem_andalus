@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<con:soapui-project id="fcubs-checkbook-test" name="FCUBS CheckBook Test" 
+    resourceRoot="" soapui-version="5.7.0" 
+    xmlns:con="http://eviware.com/soapui/config">
+    <con:settings/>
+    <con:interface xsi:type="con:WsdlInterface" id="fcubs-interface" 
+        wsaVersion="NONE" name="FCUBSAccServiceSoapBinding" type="soap" 
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <con:settings/>
+        <con:definitionCache type="TEXT" rootPart=""/>
+        <con:endpoints>
+            <con:endpoint>http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService</con:endpoint>
+        </con:endpoints>
+        <con:operation id="query-checkbook-op" isOneWay="false" 
+            action="" name="QueryCheckBook" bindingOperationName="QueryCheckBook" 
+            type="request-response" inputName="" receivesAttachments="false" 
+            sendsAttachments="false" anonymous="optional">
+            <con:settings/>
+            <con:call id="default-request" name="Request 1">
+                <con:settings/>
+                <con:encoding>UTF-8</con:encoding>
+                <con:endpoint>http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService</con:endpoint>
+                <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fcub="http://fcubs.ofss.com/service/FCUBSAccService">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <fcub:QUERYCHECKBOOK_IOFS_REQ>
+         <fcub:FCUBS_HEADER>
+            <fcub:SOURCE>FCAT</fcub:SOURCE>
+            <fcub:UBSCOMP>FCUBS</fcub:UBSCOMP>
+            <fcub:USERID>ADMINUSER1</fcub:USERID>
+            <fcub:BRANCH>001</fcub:BRANCH>
+            <fcub:SERVICE>FCUBSAccService</fcub:SERVICE>
+            <fcub:OPERATION>QueryCheckBook</fcub:OPERATION>
+         </fcub:FCUBS_HEADER>
+         <fcub:FCUBS_BODY>
+            <fcub:Chq-Bk-Details-IO>
+               <fcub:ACCOUNT_BRANCH>001</fcub:ACCOUNT_BRANCH>
+               <fcub:ACCOUNT>001001000811217</fcub:ACCOUNT>
+               <fcub:FIRST_CHEQUE_NUMBER>734</fcub:FIRST_CHEQUE_NUMBER>
+            </fcub:Chq-Bk-Details-IO>
+         </fcub:FCUBS_BODY>
+      </fcub:QUERYCHECKBOOK_IOFS_REQ>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request>
+                <con:credentials>
+                    <con:authType>No Authorization</con:authType>
+                </con:credentials>
+                <con:jmsConfig JMSDeliveryMode="PERSISTENT"/>
+                <con:jmsPropertyConfig/>
+                <con:wsaConfig mustUnderstand="NONE" version="200508" action=""/>
+                <con:wsrmConfig version="1.2"/>
+            </con:call>
+        </con:operation>
+    </con:interface>
+    <con:testSuite id="test-suite-1" name="CheckBook Test Suite">
+        <con:settings/>
+        <con:runType>SEQUENTIAL</con:runType>
+        <con:testCase id="test-case-1" failOnError="true" failTestCaseOnErrors="true" 
+            keepSession="false" maxResults="0" name="Test Query CheckBook" searchProperties="true">
+            <con:settings/>
+            <con:testStep type="request" id="test-step-1" name="QueryCheckBook - Test 1">
+                <con:settings/>
+                <con:config xsi:type="con:RequestStep" 
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <con:interface>FCUBSAccServiceSoapBinding</con:interface>
+                    <con:operation>QueryCheckBook</con:operation>
+                    <con:request name="QueryCheckBook - Test 1" id="req-1">
+                        <con:settings>
+                            <con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">
+                                &lt;xml-fragment/&gt;
+                            </con:setting>
+                        </con:settings>
+                        <con:encoding>UTF-8</con:encoding>
+                        <con:endpoint>http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService</con:endpoint>
+                        <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fcub="http://fcubs.ofss.com/service/FCUBSAccService">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <fcub:QUERYCHECKBOOK_IOFS_REQ>
+         <fcub:FCUBS_HEADER>
+            <fcub:SOURCE>FCAT</fcub:SOURCE>
+            <fcub:UBSCOMP>FCUBS</fcub:UBSCOMP>
+            <fcub:USERID>ADMINUSER1</fcub:USERID>
+            <fcub:BRANCH>001</fcub:BRANCH>
+            <fcub:SERVICE>FCUBSAccService</fcub:SERVICE>
+            <fcub:OPERATION>QueryCheckBook</fcub:OPERATION>
+         </fcub:FCUBS_HEADER>
+         <fcub:FCUBS_BODY>
+            <fcub:Chq-Bk-Details-IO>
+               <fcub:ACCOUNT_BRANCH>001</fcub:ACCOUNT_BRANCH>
+               <fcub:ACCOUNT>001001000811217</fcub:ACCOUNT>
+               <fcub:FIRST_CHEQUE_NUMBER>734</fcub:FIRST_CHEQUE_NUMBER>
+            </fcub:Chq-Bk-Details-IO>
+         </fcub:FCUBS_BODY>
+      </fcub:QUERYCHECKBOOK_IOFS_REQ>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request>
+                        <con:assertion type="Simple Contains" id="assert-1" name="Contains SUCCESS">
+                            <con:configuration>
+                                <token>SUCCESS</token>
+                                <ignoreCase>false</ignoreCase>
+                                <useRegEx>false</useRegEx>
+                            </con:configuration>
+                        </con:assertion>
+                        <con:assertion type="Simple Contains" id="assert-2" name="Contains Account">
+                            <con:configuration>
+                                <token>001001000811217</token>
+                                <ignoreCase>false</ignoreCase>
+                                <useRegEx>false</useRegEx>
+                            </con:configuration>
+                        </con:assertion>
+                        <con:credentials>
+                            <con:authType>No Authorization</con:authType>
+                        </con:credentials>
+                        <con:jmsConfig JMSDeliveryMode="PERSISTENT"/>
+                        <con:jmsPropertyConfig/>
+                        <con:wsaConfig mustUnderstand="NONE" version="200508"/>
+                        <con:wsrmConfig version="1.2"/>
+                    </con:request>
+                </con:config>
+            </con:testStep>
+            <con:properties/>
+        </con:testCase>
+        <con:properties/>
+    </con:testSuite>
+    <con:properties/>
+    <con:wssContainer/>
+    <con:oAuth2ProfileContainer/>
+    <con:oAuth1ProfileContainer/>
+</con:soapui-project>

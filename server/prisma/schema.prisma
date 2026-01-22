@@ -1,0 +1,302 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Branch {
+  id                         Int                         @id @default(autoincrement())
+  branchName                 String                      @map("branch_name")
+  branchLocation             String                      @map("branch_location")
+  routingNumber              String                      @unique @map("routing_number")
+  createdAt                  DateTime                    @default(now()) @map("created_at")
+  updatedAt                  DateTime                    @updatedAt @map("updated_at")
+  accountingNumber           String                      @default("") @map("accounting_number")
+  branchNumber               String                      @default("") @map("branch_number")
+  accounts                   Account[]
+  certifiedCheckLogs         CertifiedCheckLog[]
+  certifiedCheckSerial       CertifiedCheckSerial?
+  printOperations            PrintOperation[]
+  users                      User[]
+  certifiedCheckPrintRecords CertifiedCheckPrintRecord[]
+
+  @@map("branches")
+}
+
+model Permission {
+  id              Int              @id @default(autoincrement())
+  permissionName  String           @unique @map("permission_name")
+  permissionCode  String           @unique @map("permission_code")
+  description     String?
+  createdAt       DateTime         @default(now()) @map("created_at")
+  userPermissions UserPermission[]
+
+  @@map("permissions")
+}
+
+model User {
+  id                    Int                    @id @default(autoincrement())
+  username              String                 @unique
+  passwordHash          String                 @map("password_hash")
+  branchId              Int?                   @map("branch_id")
+  isAdmin               Boolean                @default(false) @map("is_admin")
+  isActive              Boolean                @default(true) @map("is_active")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  certifiedCheckLogs    CertifiedCheckLog[]
+  inventoryTransactions InventoryTransaction[]
+  printLogs             PrintLog[]
+  printOperations       PrintOperation[]
+  userPermissions       UserPermission[]
+  branch                Branch?                @relation(fields: [branchId], references: [id])
+
+  @@map("users")
+}
+
+model UserPermission {
+  userId       Int        @map("user_id")
+  permissionId Int        @map("permission_id")
+  grantedAt    DateTime   @default(now()) @map("granted_at")
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, permissionId])
+  @@map("user_permissions")
+}
+
+model Account {
+  id                Int              @id @default(autoincrement())
+  accountNumber     String           @unique @map("account_number")
+  accountHolderName String           @map("account_holder_name")
+  accountType       Int              @map("account_type")
+  lastPrintedSerial Int              @default(0) @map("last_printed_serial")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  branchId          Int?             @map("branch_id")
+  branch            Branch?          @relation(fields: [branchId], references: [id])
+  printOperations   PrintOperation[]
+
+  @@map("accounts")
+}
+
+model Inventory {
+  id        Int      @id @default(autoincrement())
+  stockType Int      @map("stock_type")
+  quantity  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("inventory")
+}
+
+model InventoryTransaction {
+  id              Int      @id @default(autoincrement())
+  stockType       Int      @map("stock_type")
+  transactionType String   @map("transaction_type")
+  quantity        Int
+  serialFrom      String?  @map("serial_from")
+  serialTo        String?  @map("serial_to")
+  userId          Int?     @map("user_id")
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  user            User?    @relation(fields: [userId], references: [id])
+
+  @@map("inventory_transactions")
+}
+
+model PrintOperation {
+  id            Int      @id @default(autoincrement())
+  accountId     Int      @map("account_id")
+  userId        Int?     @map("user_id")
+  branchId      Int?     @map("branch_id")
+  routingNumber String   @map("routing_number")
+  accountNumber String   @map("account_number")
+  accountType   Int      @map("account_type")
+  serialFrom    Int      @map("serial_from")
+  serialTo      Int      @map("serial_to")
+  sheetsPrinted Int      @map("sheets_printed")
+  printDate     DateTime @default(now()) @map("print_date")
+  status        String   @default("COMPLETED")
+  notes         String?
+  pdfFilename   String?  @map("pdf_filename")
+  account       Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  branch        Branch?  @relation(fields: [branchId], references: [id])
+  user          User?    @relation(fields: [userId], references: [id])
+
+  @@map("print_operations")
+}
+
+model PrintSettings {
+  id                        Int      @id @default(autoincrement())
+  accountType               Int      @unique @map("account_type")
+  checkWidth                Float    @map("check_width")
+  checkHeight               Float    @map("check_height")
+  branchNameX               Float    @map("branch_name_x")
+  branchNameY               Float    @map("branch_name_y")
+  branchNameFontSize        Int      @default(14) @map("branch_name_font_size")
+  branchNameAlign           String   @default("center") @map("branch_name_align")
+  serialNumberX             Float    @map("serial_number_x")
+  serialNumberY             Float    @map("serial_number_y")
+  serialNumberFontSize      Int      @default(12) @map("serial_number_font_size")
+  serialNumberAlign         String   @default("right") @map("serial_number_align")
+  accountHolderNameX        Float    @map("account_holder_name_x")
+  accountHolderNameY        Float    @map("account_holder_name_y")
+  accountHolderNameFontSize Int      @default(10) @map("account_holder_name_font_size")
+  accountHolderNameAlign    String   @default("left") @map("account_holder_name_align")
+  micrLineX                 Float    @map("micr_line_x")
+  micrLineY                 Float    @map("micr_line_y")
+  micrLineFontSize          Int      @default(12) @map("micr_line_font_size")
+  micrLineAlign             String   @default("center") @map("micr_line_align")
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+  accountNumberAlign        String?  @default("left") @map("account_number_align")
+  accountNumberFontSize     Int?     @default(12) @map("account_number_font_size")
+  accountNumberX            Float?   @map("account_number_x")
+  accountNumberY            Float?   @map("account_number_y")
+  checkSequenceAlign        String?  @default("left") @map("check_sequence_align")
+  checkSequenceFontSize     Int?     @default(12) @map("check_sequence_font_size")
+  checkSequenceX            Float?   @map("check_sequence_x")
+  checkSequenceY            Float?   @map("check_sequence_y")
+
+  // Specialized fields for individual certified check printing
+  beneficiaryNameX        Float?  @map("beneficiary_name_x")
+  beneficiaryNameY        Float?  @map("beneficiary_name_y")
+  beneficiaryNameFontSize Int?    @default(12) @map("beneficiary_name_font_size")
+  beneficiaryNameAlign    String? @default("right") @map("beneficiary_name_align")
+
+  amountNumbersX        Float?  @map("amount_numbers_x")
+  amountNumbersY        Float?  @map("amount_numbers_y")
+  amountNumbersFontSize Int?    @default(14) @map("amount_numbers_font_size")
+  amountNumbersAlign    String? @default("left") @map("amount_numbers_align")
+
+  amountWordsX        Float?  @map("amount_words_x")
+  amountWordsY        Float?  @map("amount_words_y")
+  amountWordsFontSize Int?    @default(11) @map("amount_words_font_size")
+  amountWordsAlign    String? @default("right") @map("amount_words_align")
+
+  issueDateX        Float?  @map("issue_date_x")
+  issueDateY        Float?  @map("issue_date_y")
+  issueDateFontSize Int?    @default(10) @map("issue_date_font_size")
+  issueDateAlign    String? @default("right") @map("issue_date_align")
+
+  checkTypeX        Float?  @map("check_type_x")
+  checkTypeY        Float?  @map("check_type_y")
+  checkTypeFontSize Int?    @default(12) @map("check_type_font_size")
+  checkTypeAlign    String? @default("center") @map("check_type_align")
+
+  checkNumberX        Float?  @map("check_number_x")
+  checkNumberY        Float?  @map("check_number_y")
+  checkNumberFontSize Int?    @default(11) @map("check_number_font_size")
+  checkNumberAlign    String? @default("left") @map("check_number_align")
+
+  @@map("print_settings")
+}
+
+model SystemSetting {
+  key       String   @id @map("setting_key")
+  value     String   @map("setting_value")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+model PrintLog {
+  id                Int      @id @default(autoincrement())
+  accountNumber     String   @map("account_number")
+  accountBranch     String   @map("account_branch")
+  branchName        String?  @map("branch_name")
+  firstChequeNumber Int      @map("first_cheque_number")
+  lastChequeNumber  Int      @map("last_cheque_number")
+  totalCheques      Int      @map("total_cheques")
+  accountType       Int      @map("account_type")
+  operationType     String   @map("operation_type")
+  printedBy         Int      @map("printed_by")
+  printedByName     String   @map("printed_by_name")
+  printDate         DateTime @default(now()) @map("print_date")
+  notes             String?
+  reprintReason     String?  @map("reprint_reason")
+  user              User     @relation(fields: [printedBy], references: [id])
+
+  @@index([accountNumber])
+  @@index([printDate])
+  @@index([operationType])
+  @@map("print_logs")
+}
+
+model PrintedCheque {
+  id            Int      @id @default(autoincrement())
+  accountNumber String   @map("account_number")
+  chequeNumber  Int      @map("cheque_number")
+  printLogId    Int      @map("print_log_id")
+  printDate     DateTime @default(now()) @map("print_date")
+  canReprint    Boolean  @default(false) @map("can_reprint")
+
+  @@unique([accountNumber, chequeNumber])
+  @@index([accountNumber])
+  @@map("printed_cheques")
+}
+
+model CertifiedCheckSerial {
+  id                Int      @id @default(autoincrement())
+  branchId          Int      @unique @map("branch_id")
+  lastSerial        Int      @default(0) @map("last_serial")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  customStartSerial Int?     @map("custom_start_serial")
+  branch            Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@map("certified_check_serials")
+}
+
+model CertifiedCheckLog {
+  id                Int      @id @default(autoincrement())
+  branchId          Int      @map("branch_id")
+  branchName        String   @map("branch_name")
+  accountingNumber  String   @map("accounting_number")
+  routingNumber     String   @map("routing_number")
+  firstSerial       Int      @map("first_serial")
+  lastSerial        Int      @map("last_serial")
+  totalChecks       Int      @map("total_checks")
+  operationType     String   @map("operation_type")
+  reprintReason     String?  @map("reprint_reason") // 'damaged' or 'not_printed' - only for reprint
+  printedBy         Int      @map("printed_by")
+  printedByName     String   @map("printed_by_name")
+  printDate         DateTime @default(now()) @map("print_date")
+  notes             String?
+  customStartSerial Int?     @map("custom_start_serial")
+  numberOfBooks     Int      @default(1) @map("number_of_books")
+  branch            Branch   @relation(fields: [branchId], references: [id])
+  user              User     @relation(fields: [printedBy], references: [id])
+
+  @@index([branchId])
+  @@index([printDate])
+  @@index([firstSerial, lastSerial])
+  @@map("certified_check_logs")
+}
+
+model CertifiedCheckPrintRecord {
+  id                Int      @id @default(autoincrement())
+  accountHolderName String   @map("account_holder_name")
+  beneficiaryName   String   @map("beneficiary_name")
+  accountNumber     String   @map("account_number")
+  amountDinars      String   @map("amount_dinars")
+  amountDirhams     String   @map("amount_dirhams")
+  amountInWords     String   @map("amount_in_words")
+  issueDate         String   @map("issue_date")
+  checkType         String   @map("check_type")
+  checkNumber       String   @unique @map("check_number")
+  branchId          Int      @map("branch_id")
+  createdBy         Int      @map("created_by")
+  createdByName     String?  @map("created_by_name")
+  branch            Branch   @relation(fields: [branchId], references: [id])
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([branchId])
+  @@index([createdAt])
+  @@map("certified_check_print_records")
+}

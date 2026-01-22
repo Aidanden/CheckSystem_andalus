@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الطباعة</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            direction: ltr;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>🖨️ اختبار الطباعة المباشر</h1>
+
+        <div class="form-group">
+            <label for="token">Token:</label>
+            <input type="text" id="token" placeholder="الصق الـ token هنا">
+            <small style="color: #666;">افتح Console واكتب: localStorage.getItem('token')</small>
+        </div>
+
+        <div class="form-group">
+            <label for="accountNumber">رقم الحساب:</label>
+            <input type="text" id="accountNumber" value="100012345678901">
+        </div>
+
+        <button onclick="testPrint()">اختبار الطباعة</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Auto-fill token from localStorage if available
+        window.addEventListener('load', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                document.getElementById('token').value = token;
+            }
+        });
+
+        async function testPrint() {
+            const token = document.getElementById('token').value;
+            const accountNumber = document.getElementById('accountNumber').value;
+            const resultDiv = document.getElementById('result');
+
+            if (!token) {
+                resultDiv.innerHTML = '<div class="result error">❌ الرجاء إدخال الـ token</div>';
+                return;
+            }
+
+            if (!accountNumber) {
+                resultDiv.innerHTML = '<div class="result error">❌ الرجاء إدخال رقم الحساب</div>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="result">⏳ جاري الإرسال...</div>';
+
+            const requestData = {
+                account_number: accountNumber
+            };
+
+            console.log('🖨️ Sending request:');
+            console.log('URL:', 'http://localhost:5050/api/printing/print');
+            console.log('Headers:', {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token.substring(0, 20)}...`
+            });
+            console.log('Body:', requestData);
+
+            try {
+                const response = await fetch('http://localhost:5050/api/printing/print', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const data = await response.json();
+
+                console.log('📥 Response:', data);
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <h3>✅ نجحت الطباعة!</h3>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h3>❌ فشلت الطباعة</h3>
+                            <p><strong>الخطأ:</strong> ${data.error || 'خطأ غير معروف'}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ Network error:', error);
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ خطأ في الاتصال</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+
+</html>
