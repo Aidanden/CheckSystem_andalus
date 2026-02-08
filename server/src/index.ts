@@ -18,7 +18,7 @@ const HOST = process.env.HOST || 'localhost';
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:4040',
+  origin: process.env.CLIENT_URL || 'http://localhost:4070',
   credentials: true,
 }));
 // Use secure logging configuration

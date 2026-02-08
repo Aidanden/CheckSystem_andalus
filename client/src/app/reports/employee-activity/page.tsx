@@ -18,8 +18,8 @@ interface PrintLogActivity {
   lastChequeNumber: number;
   totalCheques: number;
   accountType: number;
-  operationType: 'print' | 'reprint';
-  reprintReason?: 'damaged' | 'not_printed';
+  operationType: string;
+  reprintReason?: string;
   printedBy: number;
   printedByName: string;
   printDate: string;
@@ -56,7 +56,7 @@ export default function EmployeeActivityReportPage() {
   const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
-    operationType: '' as 'print' | 'reprint' | '',
+    operationType: '',
     limit: 100,
   });
 
@@ -77,7 +77,7 @@ export default function EmployeeActivityReportPage() {
       
       // إذا كان المستخدم الحالي ليس مديراً، حدد نفسه فقط
       if (!currentUser?.isAdmin && currentUser) {
-        setSelectedUserId(currentUser.userId);
+        setSelectedUserId(currentUser.id);
       }
     } catch (error) {
       console.error('Failed to load users:', error);
