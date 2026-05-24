@@ -56,7 +56,7 @@ const DEFAULT_BANK_STAFF: PrintSettings = {
   checkHeight: 86,
   branchName: { ...DEFAULT_INDIVIDUAL.branchName },
   serialNumber: { ...DEFAULT_INDIVIDUAL.serialNumber },
-  accountNumber: { ...DEFAULT_INDIVIDUAL.accountNumber },
+  accountNumber: DEFAULT_INDIVIDUAL.accountNumber ? { ...DEFAULT_INDIVIDUAL.accountNumber } : null,
   checkSequence: { ...DEFAULT_INDIVIDUAL.checkSequence },
   accountHolderName: { ...DEFAULT_INDIVIDUAL.accountHolderName },
   micrLine: { ...DEFAULT_INDIVIDUAL.micrLine },
@@ -277,7 +277,7 @@ export default function SettingsPage() {
 
   const handleTestPrint = () => {
     // للشيكات المصدقة (Tab 4)، نستخدم معاينة مختلفة
-    if (activeTab === 4) {
+    if ((activeTab as number) === 4) {
       const testSerialNumber = '000000001';
       const testBranchName = 'Tripoli Branch';
       const testAccountingNumber = '0010010001';
@@ -684,7 +684,7 @@ Reload URL
             </div>
 
             {/* Account Number Position */}
-            {activeTab !== 4 && currentSettings.accountNumber && (
+            {(activeTab as number) !== 4 && currentSettings.accountNumber && (
               <div className="space-y-4 border-t pt-4">
                 <h3 className="font-medium text-gray-700">Account Number</h3>
 
@@ -841,7 +841,7 @@ Reload URL
             </div>
 
             {/* Account Holder Name Position */}
-            {activeTab !== 4 && (
+            {(activeTab as number) !== 4 && (
               <div className="space-y-4 border-t pt-4">
                 <h3 className="font-medium text-gray-700">Account Holder Name</h3>
 

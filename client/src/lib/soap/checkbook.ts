@@ -4,8 +4,8 @@ const DEFAULT_BRANCH = '001';
 
 const padNumber = (value: number, length = 9) => value.toString().padStart(length, '0');
 
-const buildMicrLine = (serial: string, accountNumber: string, routingNumber: string, accountType: 1 | 2) => {
-  const typeCode = accountType === 1 ? '01' : '02';
+const buildMicrLine = (serial: string, accountNumber: string, routingNumber: string, accountType: 1 | 2 | 3) => {
+  const typeCode = accountType === 2 ? '02' : '01';
   // Ensure routing number is full length (8 digits) if possible, otherwise use what is provided
   // User requested full routing number. If it's short (e.g. 001), it might be wrong, but we print what we have.
   // The backend should provide the full routing number.
