@@ -56,7 +56,7 @@ export default function CertifiedInventoryPage() {
             });
             loadInventoryData();
         } catch (error: any) {
-            alert(error.response?.data?.error || 'فشل في إضافة المخزون');
+            alert(error.response?.data?.error || 'Failed to add stock');
         }
     };
 
@@ -79,8 +79,8 @@ export default function CertifiedInventoryPage() {
                             <Stamp className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-800">إدارة مخزون الصكوك المصدقة</h1>
-                            <p className="text-gray-600">إدارة الأوراق والكميات المتاحة للصكوك المصدقة</p>
+                            <h1 className="text-2xl font-bold text-gray-800">Certified Checks Inventory</h1>
+                            <p className="text-gray-600">Manage sheets and quantities for certified checks</p>
                         </div>
                     </div>
                     <button
@@ -106,7 +106,7 @@ export default function CertifiedInventoryPage() {
 
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-gray-600">الأوراق المتاحة:</span>
+                                        <span className="text-gray-600">Available sheets:</span>
                                         <span className="text-3xl font-bold text-gray-800">
                                             {item.quantity}
                                         </span>
@@ -123,8 +123,8 @@ export default function CertifiedInventoryPage() {
                                         {item.quantity > 500
                                             ? 'المخزون جيد'
                                             : item.quantity > 100
-                                                ? 'المخزون متوسط'
-                                                : 'المخزون منخفض - يرجى إضافة مخزون'}
+                                                ? 'Stock Medium'
+                                                : 'Stock Low - Please add stock'}
                                     </div>
                                 </div>
                             </div>
@@ -132,12 +132,12 @@ export default function CertifiedInventoryPage() {
                     ) : (
                         <div className="card border-2 border-dashed border-gray-300 flex flex-col items-center justify-center p-8 text-gray-500">
                             <Package className="w-12 h-12 mb-2 opacity-20" />
-                            <p>لا يوجد سجل مخزون لهذا النوع</p>
+                            <p>No stock record for this type</p>
                             <button
                                 onClick={() => setShowAddModal(true)}
                                 className="mt-4 text-blue-600 hover:underline"
                             >
-                                إنشاء سجل مخزون الآن
+                                Create stock record now
                             </button>
                         </div>
                     )}
@@ -147,7 +147,7 @@ export default function CertifiedInventoryPage() {
                 <div className="card">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-lg font-semibold text-gray-800">
-                            سجل حركة مخزون الصكوك المصدقة
+                            Certified Checks Stock Movement Log
                         </h2>
                         <History className="w-5 h-5 text-gray-400" />
                     </div>
@@ -157,13 +157,13 @@ export default function CertifiedInventoryPage() {
                             <thead>
                                 <tr className="border-b border-gray-200">
                                     <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                                        العملية
+                                        Operation
                                     </th>
                                     <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
                                         الكمية
                                     </th>
                                     <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                                        التاريخ
+                                        Date
                                     </th>
                                     <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
                                         ملاحظات
@@ -186,7 +186,7 @@ export default function CertifiedInventoryPage() {
                                                     ) : (
                                                         <TrendingDown className="w-4 h-4" />
                                                     )}
-                                                    {trans.transactionType === 'ADD' ? 'إضافة' : 'خصم/طباعة'}
+                                                    {trans.transactionType === 'ADD' ? 'Add' : 'Deduct/Print'}
                                                 </span>
                                             </td>
                                             <td className="py-3 px-4 text-sm font-mono font-bold">
@@ -209,7 +209,7 @@ export default function CertifiedInventoryPage() {
                                 ) : (
                                     <tr>
                                         <td colSpan={4} className="py-8 text-center text-gray-500">
-                                            لا يوجد سجل حركات حتى الآن
+                                            No movement records yet
                                         </td>
                                     </tr>
                                 )}
@@ -223,21 +223,21 @@ export default function CertifiedInventoryPage() {
             {showAddModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="card max-w-md w-full mx-4 animate-in fade-in zoom-in duration-200">
-                        <h2 className="text-xl font-bold text-gray-800 mb-4">إضافة مخزون صكوك مصدقة</h2>
+                        <h2 className="text-xl font-bold text-gray-800 mb-4">Add Certified Checks Stock</h2>
 
                         <form onSubmit={handleAddStock} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    نوع الشيكات
+                                    Check Type
                                 </label>
                                 <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 text-amber-800 font-semibold">
-                                    شيكات مصدقة (Certified Checks)
+                                    Certified Checks
                                 </div>
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    الكمية (عدد الأوراق)
+                                    Quantity (number of sheets)
                                 </label>
                                 <input
                                     type="number"
@@ -248,14 +248,14 @@ export default function CertifiedInventoryPage() {
                                     className="input focus:ring-amber-500 border-amber-200"
                                     min="1"
                                     required
-                                    placeholder="أدخل عدد الأوراق..."
+                                    placeholder="Enter number of sheets..."
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        بداية التسلسل (اختياري)
+                                        Start serial (optional)
                                     </label>
                                     <input
                                         type="text"
@@ -267,7 +267,7 @@ export default function CertifiedInventoryPage() {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        نهاية التسلسل (اختياري)
+                                        End serial (optional)
                                     </label>
                                     <input
                                         type="text"

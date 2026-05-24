@@ -206,7 +206,7 @@ export default function CertifiedPrintPage() {
             setBranches(data);
         } catch (err: any) {
             console.error('Error loading branches:', err);
-            setError(err.response?.data?.error || 'فشل في تحميل قائمة الفروع');
+            setError(err.response?.data?.error || 'Failed to load branches list');
         }
     };
 
@@ -217,7 +217,7 @@ export default function CertifiedPrintPage() {
             setRecords(data.records);
         } catch (err: any) {
             console.error('Error loading records:', err);
-            setError(err.response?.data?.error || 'فشل في تحميل سجل العمليات');
+            setError(err.response?.data?.error || 'Failed to load operations log');
         } finally {
             setRecordsLoading(false);
         }
@@ -282,7 +282,7 @@ export default function CertifiedPrintPage() {
             }
         } catch (err: any) {
             console.error('Error loading settings:', err);
-            setError(err.response?.data?.error || 'فشل في تحميل إعدادات الطباعة');
+            setError(err.response?.data?.error || 'Failed to load print settings');
         }
     };
 
@@ -292,23 +292,23 @@ export default function CertifiedPrintPage() {
 
     const validateForm = (): boolean => {
         if (!formData.checkNumber.trim()) {
-            setError('يرجى إدخال رقم الشيك المرمز');
+            setError('Please enter the encoded check number');
             return false;
         }
         if (!formData.accountHolderName.trim()) {
-            setError('يرجى إدخال اسم صاحب الحساب');
+            setError('Please enter account holder name');
             return false;
         }
         if (!formData.beneficiaryName.trim()) {
-            setError('يرجى إدخال اسم المستفيد');
+            setError('Please enter beneficiary name');
             return false;
         }
         if (!formData.accountNumber.trim()) {
-            setError('يرجى إدخال رقم الحساب');
+            setError('Please enter account number');
             return false;
         }
         if (!formData.amountDinars || parseInt(formData.amountDinars) <= 0) {
-            setError('يرجى إدخال مبلغ صحيح');
+            setError('Please enter a valid amount');
             return false;
         }
         if (!formData.branchId) {

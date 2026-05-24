@@ -32,7 +32,7 @@ export default function BranchesPage() {
     if (!currentUser) return;
 
     if (!currentUser.isAdmin) {
-      alert('ليس لديك صلاحية الوصول لهذه الصفحة');
+      alert('You do not have permission to access this page');
       window.location.href = '/dashboard';
       return;
     }
@@ -49,7 +49,7 @@ export default function BranchesPage() {
       setPasswordError('');
       setPassword('');
     } else {
-      setPasswordError('كلمة المرور غير صحيحة');
+      setPasswordError('Incorrect password');
       setPassword('');
     }
   };
@@ -87,7 +87,7 @@ export default function BranchesPage() {
       });
       loadBranches();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'فشل في حفظ الفرع');
+      alert(error.response?.data?.error || 'Failed to save branch');
     }
   };
 
@@ -104,13 +104,13 @@ export default function BranchesPage() {
   };
 
   const handleDelete = async (branchId: number) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الفرع؟')) return;
+    if (!confirm('Are you sure you want to delete this branch?')) return;
 
     try {
       await branchService.delete(branchId);
       loadBranches();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'فشل في حذف الفرع');
+      alert(error.response?.data?.error || 'Failed to delete branch');
     }
   };
 
@@ -132,7 +132,7 @@ export default function BranchesPage() {
                 إدارة الفروع
               </h2>
               <p className="text-primary-600 font-semibold mb-4">
-                منطقة محمية
+                Protected area
               </p>
               <div className="w-16 h-1 bg-gradient-to-r from-primary-500 to-secondary-400 mx-auto rounded-full"></div>
             </div>
@@ -147,7 +147,7 @@ export default function BranchesPage() {
                   <Lock className="w-8 h-8 text-primary-600" />
                 </div>
                 <p className="text-gray-600 text-center text-sm">
-                  يرجى إدخال كلمة المرور للوصول إلى إعدادات الفروع
+                  Please enter the password to access branch settings
                 </p>
               </div>
 
@@ -178,7 +178,7 @@ export default function BranchesPage() {
                   type="submit"
                   className="w-full bg-gradient-to-r from-primary-600 to-primary-500 text-white py-3 rounded-xl font-semibold hover:from-primary-700 hover:to-primary-600 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
-                  فتح القفل
+                  Unlock
                 </button>
               </form>
             </div>
@@ -186,14 +186,14 @@ export default function BranchesPage() {
             <div className="text-center mt-6 space-y-4">
               <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm">
                 <p className="text-blue-800 font-medium mb-2">
-                  يجب الاتصال بالشركة المطورة لإضافة فروع جديدة
+                  Contact the development company to add new branches
                 </p>
                 <div className="flex flex-col gap-1 text-blue-600 dir-ltr">
                   <span className="font-mono font-bold">0925232731</span>
                   <span className="font-mono font-bold">0915730097</span>
                 </div>
               </div>
-              <p className="text-xs text-gray-400">نظام طباعة الشيكات المصرفية الآمن</p>
+              <p className="text-xs text-gray-400">Secure bank check printing system</p>
             </div>
           </div>
         </div>
@@ -219,15 +219,15 @@ export default function BranchesPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">إدارة الفروع</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Branch Management</h1>
           <div className="flex items-center gap-3">
             <button
               onClick={handleLock}
               className="btn bg-gray-200 text-gray-700 hover:bg-gray-300 flex items-center gap-2"
-              title="قفل الصفحة"
+              title="Lock page"
             >
               <Lock className="w-5 h-5" />
-              قفل
+              Lock
             </button>
             <button
               onClick={() => {
@@ -244,8 +244,8 @@ export default function BranchesPage() {
               className="btn btn-primary flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
-              إضافة فرع
-            </button>
+Add Branch
+          </button>
           </div>
         </div>
 
@@ -269,21 +269,21 @@ export default function BranchesPage() {
 
               <div className="space-y-2 mb-4">
                 <div>
-                  <p className="text-xs text-gray-500">رقم التوجيه</p>
+                  <p className="text-xs text-gray-500">Routing Number</p>
                   <p className="font-mono font-semibold text-gray-800">
                     {branch.routingNumber}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">رقم الفرع</p>
+                  <p className="text-xs text-gray-500">Branch Number</p>
                   <p className="font-mono font-semibold text-gray-800">
-                    {branch.branchNumber || 'غير محدد'}
+                    {branch.branchNumber || 'Not set'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">الرقم المحاسبي</p>
+                  <p className="text-xs text-gray-500">Accounting Number</p>
                   <p className="font-mono font-semibold text-gray-800">
-                    {branch.accountingNumber || 'غير محدد'}
+                    {branch.accountingNumber || 'Not set'}
                   </p>
                 </div>
               </div>
@@ -310,12 +310,12 @@ export default function BranchesPage() {
         {branches.length === 0 && (
           <div className="card text-center py-12">
             <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">لا توجد فروع حتى الآن</p>
+            <p className="text-gray-600">No branches yet</p>
             <button
               onClick={() => setShowModal(true)}
               className="mt-4 btn btn-primary"
             >
-              إضافة فرع جديد
+              Add New Branch
             </button>
           </div>
         )}
@@ -326,13 +326,13 @@ export default function BranchesPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="card max-w-md w-full mx-4">
             <h2 className="text-xl font-bold text-gray-800 mb-4">
-              {editingBranch ? 'تعديل فرع' : 'إضافة فرع جديد'}
+              {editingBranch ? 'تعديل فرع' : 'Add New Branch'}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  اسم الفرع
+                  Branch Name
                 </label>
                 <input
                   type="text"
@@ -347,7 +347,7 @@ export default function BranchesPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  الموقع
+                  Location
                 </label>
                 <input
                   type="text"
@@ -362,7 +362,7 @@ export default function BranchesPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  رقم التوجيه (Routing Number)
+                  Routing Number
                 </label>
                 <input
                   type="text"
@@ -386,7 +386,7 @@ export default function BranchesPage() {
                     setFormData({ ...formData, branch_number: e.target.value })
                   }
                   className="input"
-                  placeholder="مثال: 123"
+                  placeholder="e.g. 123"
                 />
               </div>
 
@@ -401,13 +401,13 @@ export default function BranchesPage() {
                     setFormData({ ...formData, accounting_number: e.target.value })
                   }
                   className="input"
-                  placeholder="مثال: 001-2024"
+                  placeholder="e.g. 001-2024"
                 />
               </div>
 
               <div className="flex gap-3 pt-4">
                 <button type="submit" className="flex-1 btn btn-primary">
-                  حفظ
+                  Save
                 </button>
                 <button
                   type="button"
@@ -417,7 +417,7 @@ export default function BranchesPage() {
                   }}
                   className="flex-1 btn btn-secondary"
                 >
-                  إلغاء
+                  Cancel
                 </button>
               </div>
             </form>

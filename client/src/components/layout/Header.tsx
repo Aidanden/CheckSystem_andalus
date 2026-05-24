@@ -20,7 +20,7 @@ export default function Header() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-800 mb-1">
-            مرحباً، <span className="text-primary-600">{user?.username}</span>
+            Hello, <span className="text-primary-600">{user?.username}</span>
           </h2>
           {user?.branch && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -35,7 +35,7 @@ export default function Header() {
           className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
         >
           <LogOut className="w-5 h-5" />
-          <span>تسجيل الخروج</span>
+          <span>Logout</span>
         </button>
       </div>
     </header>

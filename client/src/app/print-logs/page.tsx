@@ -96,7 +96,7 @@ export default function PrintLogsPage() {
 
   const openReprintModal = (log: PrintLog) => {
     if (!canReprint) {
-      alert('ليس لديك صلاحية إعادة الطباعة. يرجى التواصل مع المسؤول.');
+      alert('You do not have reprint permission. Please contact the administrator.');
       return;
     }
     setSelectedLog(log);
@@ -111,18 +111,18 @@ export default function PrintLogsPage() {
 
     // Validation
     if (reprintStartSerial < selectedLog.firstChequeNumber || reprintEndSerial > selectedLog.lastChequeNumber) {
-      alert(`الرجاء اختيار نطاق ضمن النطاق الأصلي (${selectedLog.firstChequeNumber} - ${selectedLog.lastChequeNumber})`);
+      alert(`Please select a range within the original range (${selectedLog.firstChequeNumber} - ${selectedLog.lastChequeNumber})`);
       return;
     }
 
     if (reprintStartSerial > reprintEndSerial) {
-      alert('رقم البداية يجب أن يكون أصغر من أو يساوي رقم النهاية');
+      alert('Start number must be less than or equal to end number');
       return;
     }
 
     // التحقق من اختيار سبب إعادة الطباعة
     if (!reprintReason || (reprintReason !== 'damaged' && reprintReason !== 'not_printed')) {
-      alert('الرجاء اختيار سبب إعادة الطباعة: ورقة تالفة أو ورقة لم تطبع');
+      alert('Please select reprint reason: damaged sheet or sheet not printed');
       return;
     }
 
@@ -141,7 +141,7 @@ export default function PrintLogsPage() {
       );
 
       if (filteredStatuses.length === 0) {
-        throw new Error('لم يتم العثور على شيكات في النطاق المحدد');
+        throw new Error('No checks found in the specified range');
       }
 
       // إنشاء استجابة SOAP مصفاة مع الحفاظ على chequeLeaves الأصلي لتحديد نوع الحساب بشكل صحيح
@@ -165,7 +165,7 @@ export default function PrintLogsPage() {
       let resolvedBranchName = soapResponse.branchName || selectedLog.branchName;
       let resolvedRouting = soapResponse.routingNumber;
 
-      if (!resolvedBranchName || !resolvedRouting || resolvedBranchName.startsWith('فرع 0')) {
+      if (!resolvedBranchName || !resolvedRouting || resolvedBranchName.startsWith('Branch 0')) {
         try {
           const branch = await branchService.getByAccountNumber(selectedLog.accountNumber);
           if (branch) {
@@ -177,7 +177,7 @@ export default function PrintLogsPage() {
         }
       }
 
-      resolvedBranchName = resolvedBranchName || `فرع ${soapResponse.accountBranch}`;
+      resolvedBranchName = resolvedBranchName || `Branch ${soapResponse.accountBranch}`;
       resolvedRouting = resolvedRouting || soapResponse.accountBranch;
 
       // بناء معاينة الطباعة
@@ -191,7 +191,7 @@ export default function PrintLogsPage() {
       const htmlContent = renderCheckbookHtml(preview);
       const printWindow = window.open('', '_blank', 'width=1024,height=768');
       if (!printWindow) {
-        throw new Error('تعذّر فتح نافذة الطباعة');
+        throw new Error('Could not open print window');
       }
 
       printWindow.document.write(htmlContent);
@@ -221,7 +221,7 @@ export default function PrintLogsPage() {
         loadLogs();
       } catch (logError: any) {
         console.error('فشل تسجيل عملية إعادة الطباعة:', logError);
-        alert(logError.response?.data?.error || logError.message || 'فشل تسجيل عملية إعادة الطباعة');
+        alert(logError.response?.data?.error || logError.message || 'Failed to log reprint operation');
         return;
       }
 
@@ -230,7 +230,7 @@ export default function PrintLogsPage() {
       // alert('✅ تمت إعادة الطباعة بنجاح!'); // Removed alert to be less intrusive
     } catch (error: any) {
       console.error('Reprint failed:', error);
-      alert(`فشل في إعادة الطباعة: ${error.message || 'خطأ غير معروف'}`);
+      alert(`Reprint failed: ${error.message || 'Unknown error'}`);
     } finally {
       setReprinting(false);
     }
@@ -250,7 +250,7 @@ export default function PrintLogsPage() {
   };
 
   const getOperationTypeLabel = (type: string) => {
-    return type === 'print' ? 'طباعة' : 'إعادة طباعة';
+    return type === 'print' ? 'Print' : 'Reprint';
   };
 
   const getOperationTypeBadge = (type: string) => {
@@ -281,8 +281,8 @@ export default function PrintLogsPage() {
               <FileText className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">سجلات الطباعة</h1>
-              <p className="text-sm text-gray-600">عرض ومراقبة جميع عمليات الطباعة وإعادة الطباعة</p>
+              <h1 className="text-2xl font-bold text-gray-800">Print Logs</h1>
+              <p className="text-sm text-gray-600">View and monitor all print and reprint operations</p>
             </div>
           </div>
         </div>
@@ -291,7 +291,7 @@ export default function PrintLogsPage() {
         {!canReprint && (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg">
             <p className="text-sm font-medium">
-              ⚠️ ليس لديك صلاحية إعادة الطباعة. يمكنك فقط عرض السجلات.
+              ⚠️ You do not have reprint permission. You can only view the logs.
             </p>
           </div>
         )}
@@ -302,7 +302,7 @@ export default function PrintLogsPage() {
             {/* Search by Account Number */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                البحث برقم الحساب
+                Search by Account Number
               </label>
               <div className="flex gap-2">
                 <input
@@ -310,7 +310,7 @@ export default function PrintLogsPage() {
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="أدخل رقم الحساب..."
+                  placeholder="Enter account number..."
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 <button
@@ -318,16 +318,16 @@ export default function PrintLogsPage() {
                   className="btn btn-primary flex items-center gap-2"
                 >
                   <Search className="w-5 h-5" />
-                  بحث
+                  Search
                 </button>
                 {searchTerm && (
                   <button
                     onClick={handleClearSearch}
                     className="btn bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 flex items-center gap-2"
-                    title="إلغاء البحث"
+                    title="Clear search"
                   >
                     <X className="w-5 h-5" />
-                    <span className="hidden sm:inline">إلغاء</span>
+                    <span className="hidden sm:inline">Clear</span>
                   </button>
                 )}
               </div>
@@ -336,7 +336,7 @@ export default function PrintLogsPage() {
             {/* Filter by Operation Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                نوع العملية
+                Operation Type
               </label>
               <select
                 value={operationType}
@@ -346,9 +346,9 @@ export default function PrintLogsPage() {
                 }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="all">الكل</option>
-                <option value="print">طباعة</option>
-                <option value="reprint">إعادة طباعة</option>
+                <option value="all">All</option>
+                <option value="print">Print</option>
+                <option value="reprint">Reprint</option>
               </select>
             </div>
           </div>
@@ -359,7 +359,7 @@ export default function PrintLogsPage() {
           <div className="card">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">إجمالي السجلات</p>
+                <p className="text-sm text-gray-600">Total Records</p>
                 <p className="text-2xl font-bold text-gray-800">{total}</p>
               </div>
               <div className="p-3 bg-blue-100 rounded-lg">
@@ -376,28 +376,28 @@ export default function PrintLogsPage() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    رقم الحساب
+                    Account Number
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    الفرع
+                    Branch
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    نطاق الشيكات
+                    Cheque Range
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    العدد
+                    Count
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    نوع العملية
+                    Operation Type
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    المستخدم
+                    User
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    التاريخ
+                    Date
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    إجراءات
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -411,7 +411,7 @@ export default function PrintLogsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {log.branchName || `فرع ${log.accountBranch}`}
+                        {log.branchName || `Branch ${log.accountBranch}`}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -439,10 +439,10 @@ export default function PrintLogsPage() {
                           onClick={() => openReprintModal(log)}
                           disabled={reprinting}
                           className="text-blue-600 hover:text-blue-800 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="إعادة الطباعة"
+                          title="Reprint"
                         >
                           <Printer className="w-4 h-4" />
-                          {reprinting ? 'جاري...' : 'إعادة طباعة'}
+                          {reprinting ? '...' : 'Reprint'}
                         </button>
                       )}
                     </td>
@@ -458,12 +458,12 @@ export default function PrintLogsPage() {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 {/* Page Info */}
                 <div className="text-sm text-gray-700">
-                  عرض <span className="font-medium">{(page - 1) * limit + 1}</span> إلى{' '}
-                  <span className="font-medium">{Math.min(page * limit, total)}</span> من{' '}
-                  <span className="font-medium">{total}</span> سجل
+                  Showing <span className="font-medium">{(page - 1) * limit + 1}</span> to{' '}
+                  <span className="font-medium">{Math.min(page * limit, total)}</span> of{' '}
+                  <span className="font-medium">{total}</span> records
                   {totalPages > 0 && (
                     <span className="text-gray-500 mr-2">
-                      (صفحة {page} من {totalPages})
+                      (page {page} of {totalPages})
                     </span>
                   )}
                 </div>
@@ -477,7 +477,7 @@ export default function PrintLogsPage() {
                     className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors font-medium"
                   >
                     <ChevronRight className="w-4 h-4" />
-                    <span>السابق</span>
+                    <span>Previous</span>
                   </button>
 
                   {/* Page Numbers */}
@@ -543,7 +543,7 @@ export default function PrintLogsPage() {
                     disabled={page === totalPages || loading}
                     className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors font-medium"
                   >
-                    <span>التالي</span>
+                    <span>Next</span>
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                 </div>
@@ -555,8 +555,8 @@ export default function PrintLogsPage() {
         {logs.length === 0 && !loading && (
           <div className="card text-center py-12">
             <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد سجلات</h3>
-            <p className="text-gray-600">لم يتم العثور على أي سجلات طباعة</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No records</h3>
+            <p className="text-gray-600">No print logs found</p>
           </div>
         )}
       </div>
@@ -566,7 +566,7 @@ export default function PrintLogsPage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
               <h3 className="text-lg font-semibold text-gray-800">
-                إعادة طباعة شيكات
+                Reprint Cheques
               </h3>
               <button
                 onClick={() => setReprintModalOpen(false)}
@@ -578,15 +578,15 @@ export default function PrintLogsPage() {
 
             <div className="p-6 space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-                <p className="font-medium mb-1">تفاصيل الدفتر الأصلي:</p>
-                <p>رقم الحساب: <span className="font-mono font-bold">{selectedLog.accountNumber}</span></p>
-                <p>النطاق: <span className="font-mono font-bold">{selectedLog.firstChequeNumber} - {selectedLog.lastChequeNumber}</span></p>
+                <p className="font-medium mb-1">Original book details:</p>
+                <p>Account: <span className="font-mono font-bold">{selectedLog.accountNumber}</span></p>
+                <p>Range: <span className="font-mono font-bold">{selectedLog.firstChequeNumber} - {selectedLog.lastChequeNumber}</span></p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    من شيك رقم
+                    From cheque number
                   </label>
                   <input
                     type="number"
@@ -599,7 +599,7 @@ export default function PrintLogsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    إلى شيك رقم
+                    To cheque number
                   </label>
                   <input
                     type="number"
@@ -613,12 +613,12 @@ export default function PrintLogsPage() {
               </div>
 
               <div className="text-sm text-gray-500">
-                عدد الشيكات المحدد: <span className="font-bold text-gray-900">{Math.max(0, reprintEndSerial - reprintStartSerial + 1)}</span>
+                Selected cheque count: <span className="font-bold text-gray-900">{Math.max(0, reprintEndSerial - reprintStartSerial + 1)}</span>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  سبب إعادة الطباعة <span className="text-red-500">*</span>
+                  Reprint reason <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={reprintReason}
@@ -626,18 +626,18 @@ export default function PrintLogsPage() {
                   className="input w-full"
                   required
                 >
-                  <option value="">-- اختر السبب --</option>
-                  <option value="damaged">ورقة تالفة (سيتم خصم من المخزون)</option>
-                  <option value="not_printed">ورقة لم تطبع (لن يتم خصم من المخزون)</option>
+                  <option value="">-- Select reason --</option>
+                  <option value="damaged">Damaged sheet (will deduct from stock)</option>
+                  <option value="not_printed">Sheet not printed (will not deduct from stock)</option>
                 </select>
                 {reprintReason === 'damaged' && (
                   <p className="text-xs text-amber-600 mt-1">
-                    ⚠️ سيتم خصم {Math.max(0, reprintEndSerial - reprintStartSerial + 1)} ورقة من المخزون
+                    ⚠️ {Math.max(0, reprintEndSerial - reprintStartSerial + 1)} sheet(s) will be deducted from stock
                   </p>
                 )}
                 {reprintReason === 'not_printed' && (
                   <p className="text-xs text-green-600 mt-1">
-                    ✓ لن يتم خصم من المخزون لأن الورقة لم تطبع أصلاً
+                    ✓ No stock deduction because the sheet was not printed
                   </p>
                 )}
               </div>
@@ -649,7 +649,7 @@ export default function PrintLogsPage() {
                 className="btn bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                 disabled={reprinting}
               >
-                إلغاء
+                Cancel
               </button>
               <button
                 onClick={handleConfirmReprint}
@@ -659,12 +659,12 @@ export default function PrintLogsPage() {
                 {reprinting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    جاري الطباعة...
+                    Printing...
                   </>
                 ) : (
                   <>
                     <Printer className="w-4 h-4" />
-                    تأكيد الطباعة
+                    Confirm Print
                   </>
                 )}
               </button>

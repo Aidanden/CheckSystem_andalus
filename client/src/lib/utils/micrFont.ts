@@ -25,7 +25,7 @@ async function loadMicrFontBase64(): Promise<string> {
   const fontUrl = new URL('/font/micrenc.ttf', window.location.origin).toString();
   const response = await fetch(fontUrl);
   if (!response.ok) {
-    throw new Error(`فشل تحميل خط MICR من ${fontUrl}`);
+    throw new Error(`Failed to load MICR font from ${fontUrl}`);
   }
 
   const buffer = await response.arrayBuffer();

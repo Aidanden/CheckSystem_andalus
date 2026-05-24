@@ -111,10 +111,10 @@ export default function ReportsPage() {
   const generatePrintReport = () => {
     const printHtml = `
       <!DOCTYPE html>
-      <html lang="ar" dir="rtl">
+      <html lang="en" dir="ltr">
       <head>
         <meta charset="UTF-8">
-        <title>تقرير سجل عمليات الطباعة</title>
+        <title>Print Operations Report</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
           body { font-family: 'Cairo', sans-serif; padding: 40px; color: #333; line-height: 1.6; }
@@ -143,52 +143,52 @@ export default function ReportsPage() {
       </head>
       <body>
         <div class="header">
-          <h1>تقرير سجل عمليات الطباعة</h1>
-          <p>تاريخ استخراج التقرير: ${new Date().toLocaleString('ar-LY')}</p>
+          <h1>Print Operations Report</h1>
+          <p>Report date: ${new Date().toLocaleString('en-GB')}</p>
         </div>
 
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-label">إجمالي العمليات</div>
+            <div class="stat-label">Total Operations</div>
             <div class="stat-value">${statistics?.total_operations || 0}</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">أوراق مطبوعة</div>
+            <div class="stat-label">Sheets Printed</div>
             <div class="stat-value">${statistics?.total_sheets_printed || 0}</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">إعادة طباعة (عمليات)</div>
+            <div class="stat-label">Reprint (operations)</div>
             <div class="stat-value">${statistics?.reprint_operations || 0}</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">إعادة طباعة (أوراق)</div>
+            <div class="stat-label">Reprint (sheets)</div>
             <div class="stat-value">${statistics?.reprint_sheets || 0}</div>
           </div>
         </div>
 
         <div class="filters-summary">
-          <strong>فلاتر البحث المطبقة:</strong>
-          <span style="margin-right: 15px;">الفرع: ${filters.branchId ? branches.find(b => b.id === filters.branchId)?.branchName : 'الكل'}</span>
-          <span style="margin-right: 15px;">المتخدم: ${filters.userId ? users.find(u => u.id === filters.userId)?.username : 'الكل'}</span>
-          <span style="margin-right: 15px;">نوع الحساب: ${filters.accountType === 1 ? 'فردي' : filters.accountType === 2 ? 'شركة' : 'الكل'}</span>
-          <span style="margin-right: 15px;">رقم الحساب: ${filters.accountNumber || 'الكل'}</span>
-          <span style="margin-right: 15px;">الاسم: ${filters.accountHolderName || 'الكل'}</span>
-          <span style="margin-right: 15px;">التاريخ: ${filters.dateFrom || 'مفتوح'} إلى ${filters.dateTo || 'مفتوح'}</span>
+          <strong>Applied filters:</strong>
+          <span style="margin-right: 15px;">Branch: ${filters.branchId ? branches.find(b => b.id === filters.branchId)?.branchName : 'All'}</span>
+          <span style="margin-right: 15px;">User: ${filters.userId ? users.find(u => u.id === filters.userId)?.username : 'All'}</span>
+          <span style="margin-right: 15px;">Account type: ${filters.accountType === 1 ? 'Individual' : filters.accountType === 2 ? 'Corporate' : 'All'}</span>
+          <span style="margin-right: 15px;">Account: ${filters.accountNumber || 'All'}</span>
+          <span style="margin-right: 15px;">Name: ${filters.accountHolderName || 'All'}</span>
+          <span style="margin-right: 15px;">Date: ${filters.dateFrom || 'Any'} to ${filters.dateTo || 'Any'}</span>
         </div>
 
         <table>
           <thead>
             <tr>
               <th>#</th>
-              <th>رقم الحساب</th>
-              <th>اسم صاحب الحساب</th>
-              <th>النوع</th>
-              <th>من - إلى</th>
-              <th>الأوراق</th>
-              <th>التاريخ</th>
-              <th>المستخدم</th>
-              <th>الفرع</th>
-              <th>الحالة</th>
+              <th>Account Number</th>
+              <th>Account Holder</th>
+              <th>Type</th>
+              <th>From - To</th>
+              <th>Sheets</th>
+              <th>Date</th>
+              <th>User</th>
+              <th>Branch</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -197,15 +197,15 @@ export default function ReportsPage() {
                 <td>${op.id}</td>
                 <td style="font-family: monospace;">${op.accountNumber}</td>
                 <td>${(op as any).account?.accountHolderName || '-'}</td>
-                <td>${op.accountType === 1 ? 'فردي' : op.accountType === 2 ? 'شركة' : 'موظف'}</td>
+                <td>${op.accountType === 1 ? 'Individual' : op.accountType === 2 ? 'Corporate' : 'Employee'}</td>
                 <td style="font-family: monospace;">${op.serialFrom} - ${op.serialTo}</td>
                 <td>${op.sheetsPrinted}</td>
-                <td>${new Date(op.printDate).toLocaleString('ar-LY')}</td>
+                <td>${new Date(op.printDate).toLocaleString('en-GB')}</td>
                 <td>${(op as any).user?.username || '-'}</td>
                 <td>${(op as any).branch?.branchName || '-'}</td>
                 <td>
                   <span class="status ${op.status === 'COMPLETED' ? 'status-completed' : op.status === 'PENDING' ? 'status-pending' : 'status-failed'}">
-                    ${op.status === 'COMPLETED' ? 'مكتمل' : op.status === 'PENDING' ? 'قيد الانتظار' : 'فشل'}
+                    ${op.status === 'COMPLETED' ? 'Completed' : op.status === 'PENDING' ? 'Pending' : 'Failed'}
                   </span>
                 </td>
               </tr>
@@ -227,12 +227,12 @@ export default function ReportsPage() {
   };
 
   const exportToCSV = () => {
-    const headers = ['ID', 'رقم الحساب', 'الاسم', 'النوع', 'الأوراق', 'من', 'إلى', 'التاريخ', 'الحالة', 'المستخدم', 'الفرع'];
+    const headers = ['ID', 'Account Number', 'Name', 'Type', 'Sheets', 'From', 'To', 'Date', 'Status', 'User', 'Branch'];
     const rows = operations.map((op: any) => [
       op.id,
       op.accountNumber,
       op.account?.accountHolderName || '',
-      op.accountType === 1 ? 'فردي' : 'شركة',
+      op.accountType === 1 ? 'Individual' : 'Corporate',
       op.sheetsPrinted,
       op.serialFrom,
       op.serialTo,
@@ -247,7 +247,7 @@ export default function ReportsPage() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `تقرير-عمليات-الطباعة-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `print-operations-report-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
   };
 
@@ -281,8 +281,8 @@ export default function ReportsPage() {
               <FileText className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">التقارير والإحصائيات</h1>
-              <p className="text-gray-600 font-medium">عرض وتحليل عمليات طباعة الشيكات</p>
+              <h1 className="text-2xl font-bold text-gray-800">Reports & Statistics</h1>
+              <p className="text-gray-600 font-medium">View and analyze check printing operations</p>
             </div>
           </div>
 
@@ -292,7 +292,7 @@ export default function ReportsPage() {
               className={`btn ${showFilters ? 'btn-primary' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'} flex items-center gap-2 transition-all`}
             >
               <Filter className={`w-5 h-5 ${showFilters ? 'text-white' : 'text-gray-500'}`} />
-              الفلاتر
+              Filters
               {activeFiltersCount > 0 && (
                 <span className={`text-xs rounded-full w-5 h-5 flex items-center justify-center ${showFilters ? 'bg-white text-primary-600' : 'bg-primary-600 text-white'}`}>
                   {activeFiltersCount}
@@ -305,7 +305,7 @@ export default function ReportsPage() {
               className="btn bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 shadow-md disabled:opacity-50"
             >
               <Printer className="w-5 h-5" />
-              طباعة التقرير
+              Print Report
             </button>
             <button
               onClick={exportToCSV}
@@ -313,7 +313,7 @@ export default function ReportsPage() {
               className="btn bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2 shadow-md disabled:opacity-50"
             >
               <Download className="w-5 h-5" />
-              تصدير Excel
+              Export Excel
             </button>
           </div>
         </div>
@@ -324,7 +324,7 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between mb-6 pb-4 border-b">
               <div className="flex items-center gap-2">
                 <Search className="w-5 h-5 text-primary-600" />
-                <h3 className="text-lg font-bold text-gray-800">خيارات البحث المتقدم</h3>
+                <h3 className="text-lg font-bold text-gray-800">Advanced Search Options</h3>
               </div>
               {activeFiltersCount > 0 && (
                 <button
@@ -332,7 +332,7 @@ export default function ReportsPage() {
                   className="btn btn-outline-danger btn-sm flex items-center gap-1 py-1 rounded-lg"
                 >
                   <X className="w-4 h-4" />
-                  تفريغ جميع الفلاتر
+                  Clear all filters
                 </button>
               )}
             </div>
@@ -342,14 +342,14 @@ export default function ReportsPage() {
               {user?.isAdmin && (
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">
-                    الفرع
+                    Branch
                   </label>
                   <select
                     value={filters.branchId || ''}
                     onChange={(e) => handleFilterChange('branchId', e.target.value ? parseInt(e.target.value) : undefined)}
                     className="input w-full"
                   >
-                    <option value="">جميع الفروع</option>
+                    <option value="">All branches</option>
                     {branches.map((branch) => (
                       <option key={branch.id} value={branch.id}>
                         {branch.branchName}
@@ -363,14 +363,14 @@ export default function ReportsPage() {
               {user?.isAdmin && (
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">
-                    المستخدم
+                    User
                   </label>
                   <select
                     value={filters.userId || ''}
                     onChange={(e) => handleFilterChange('userId', e.target.value ? parseInt(e.target.value) : undefined)}
                     className="input w-full"
                   >
-                    <option value="">جميع المستخدمين</option>
+                    <option value="">All users</option>
                     {users.map((u) => (
                       <option key={u.id} value={u.id}>
                         {u.username}
@@ -383,48 +383,48 @@ export default function ReportsPage() {
               {/* Account Type Filter */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  نوع الحساب
+                  Account Type
                 </label>
                 <select
                   value={filters.accountType || ''}
                   onChange={(e) => handleFilterChange('accountType', e.target.value ? parseInt(e.target.value) : undefined)}
                   className="input w-full"
                 >
-                  <option value="">الكل (فردي / شركة / موظف)</option>
-                  <option value={1}>فردي (25 ورقة)</option>
-                  <option value={2}>شركات (50 ورقة)</option>
-                  <option value={3}>موظفين (10 أوراق)</option>
+                  <option value="">All (Individual / Corporate / Employee)</option>
+                  <option value={1}>Individual (25 sheets)</option>
+                  <option value={2}>Corporate (50 sheets)</option>
+                  <option value={3}>Employee (10 sheets)</option>
                 </select>
               </div>
 
               {/* Status Filter */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  حالة العملية
+                  Operation Status
                 </label>
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
                   className="input w-full"
                 >
-                  <option value="">جميع الحالات</option>
-                  <option value="COMPLETED">مكتمل بنجاح</option>
-                  <option value="PENDING">قيد الانتظار</option>
-                  <option value="FAILED">فشلت العملية</option>
+                  <option value="">All statuses</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="FAILED">Failed</option>
                 </select>
               </div>
 
               {/* Account Number Filter */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  رقم الحساب
+                  Account Number
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     value={filters.accountNumber}
                     onChange={(e) => handleFilterChange('accountNumber', e.target.value)}
-                    placeholder="ابحث برقم الحساب..."
+                    placeholder="Search by account number..."
                     className="input w-full pr-10"
                   />
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -434,14 +434,14 @@ export default function ReportsPage() {
               {/* Account Holder Name Filter */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  اسم صاحب الحساب
+                  Account Holder Name
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     value={filters.accountHolderName}
                     onChange={(e) => handleFilterChange('accountHolderName', e.target.value)}
-                    placeholder="ابحث بالاسم..."
+                    placeholder="Search by name..."
                     className="input w-full pr-10"
                   />
                   <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -451,7 +451,7 @@ export default function ReportsPage() {
               {/* Date From Filter */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  من تاريخ
+                  From date
                 </label>
                 <input
                   type="date"
@@ -464,7 +464,7 @@ export default function ReportsPage() {
               {/* Date To Filter */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  إلى تاريخ
+                  To date
                 </label>
                 <input
                   type="date"
@@ -477,19 +477,19 @@ export default function ReportsPage() {
               {/* Limit Filter */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  عدد السجلات المراد عرضها
+                  Number of records to show
                 </label>
                 <select
                   value={filters.limit}
                   onChange={(e) => handleFilterChange('limit', Number(e.target.value))}
                   className="input w-full"
                 >
-                  <option value={25}>آخر 25 عملية</option>
-                  <option value={50}>آخر 50 عملية</option>
-                  <option value={100}>آخر 100 عملية</option>
-                  <option value={200}>آخر 200 عملية</option>
-                  <option value={500}>آخر 500 عملية</option>
-                  <option value={1000}>آخر 1000 عملية</option>
+                  <option value={25}>Last 25 operations</option>
+                  <option value={50}>Last 50 operations</option>
+                  <option value={100}>Last 100 operations</option>
+                  <option value={200}>Last 200 operations</option>
+                  <option value={500}>Last 500 operations</option>
+                  <option value={1000}>Last 1000 operations</option>
                 </select>
               </div>
             </div>
@@ -501,7 +501,7 @@ export default function ReportsPage() {
           <div className="card hover:shadow-lg transition-shadow border-r-4 border-r-blue-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-gray-500 uppercase">إجمالي العمليات</p>
+                <p className="text-sm font-bold text-gray-500 uppercase">Total Operations</p>
                 <p className="text-3xl font-black text-gray-800 mt-1">
                   {statistics?.total_operations || 0}
                 </p>
@@ -515,7 +515,7 @@ export default function ReportsPage() {
           <div className="card hover:shadow-lg transition-shadow border-r-4 border-r-green-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-gray-500 uppercase">أوراق مطبوعة</p>
+                <p className="text-sm font-bold text-gray-500 uppercase">Sheets Printed</p>
                 <p className="text-3xl font-black text-gray-800 mt-1">
                   {statistics?.total_sheets_printed || 0}
                 </p>
@@ -528,18 +528,18 @@ export default function ReportsPage() {
 
           <div className="card hover:shadow-lg transition-shadow border-r-4 border-r-amber-500">
             <div>
-              <p className="text-[10px] font-bold text-gray-500 uppercase mb-2">تصنيف حسب النوع</p>
+              <p className="text-[10px] font-bold text-gray-500 uppercase mb-2">By Type</p>
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-600 font-semibold">شركات (50):</span>
+                  <span className="text-gray-600 font-semibold">Corporate (50):</span>
                   <span className="font-bold">{statistics?.corporate_50 || 0}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-600 font-semibold">أفراد (25):</span>
+                  <span className="text-gray-600 font-semibold">Individual (25):</span>
                   <span className="font-bold">{statistics?.individual_25 || 0}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-600 font-semibold">موظفين (10):</span>
+                  <span className="text-gray-600 font-semibold">Employee (10):</span>
                   <span className="font-bold">{statistics?.employees_10 || 0}</span>
                 </div>
               </div>
@@ -549,7 +549,7 @@ export default function ReportsPage() {
           <div className="card hover:shadow-lg transition-shadow border-r-4 border-r-orange-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-gray-500 uppercase">إعادة طباعة (عمليات)</p>
+                <p className="text-sm font-bold text-gray-500 uppercase">Reprint (operations)</p>
                 <p className="text-3xl font-black text-gray-800 mt-1">
                   {statistics?.reprint_operations || 0}
                 </p>
@@ -563,7 +563,7 @@ export default function ReportsPage() {
           <div className="card hover:shadow-lg transition-shadow border-r-4 border-r-red-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-gray-500 uppercase">إعادة طباعة (أوراق)</p>
+                <p className="text-sm font-bold text-gray-500 uppercase">Reprint (sheets)</p>
                 <p className="text-3xl font-black text-gray-800 mt-1">
                   {statistics?.reprint_sheets || 0}
                 </p>
@@ -580,16 +580,16 @@ export default function ReportsPage() {
           <div className="flex items-center justify-between mb-6 pb-4 border-b">
             <div className="flex items-center gap-2">
               <ClipboardList className="w-6 h-6 text-primary-600" />
-              <h2 className="text-xl font-bold text-gray-800">سجل عمليات الطباعة</h2>
+              <h2 className="text-xl font-bold text-gray-800">Print Operations Log</h2>
             </div>
             <div className="flex items-center gap-4 text-sm font-bold text-gray-600">
               {loading ? (
                 <span className="flex items-center gap-2 text-primary-600 animate-pulse">
-                  جاري التحميل...
+                  Loading...
                 </span>
               ) : (
                 <span className="bg-gray-100 px-3 py-1 rounded-full">
-                  إجمالي النتائج: {operations.length}
+                  Total results: {operations.length}
                 </span>
               )}
             </div>
@@ -600,19 +600,19 @@ export default function ReportsPage() {
               <thead>
                 <tr className="border-b-2 border-gray-100 text-right bg-gray-50">
                   <th className="py-4 px-4 text-sm font-bold text-gray-700">#</th>
-                  <th className="py-4 px-4 text-sm font-bold text-gray-700">رقم الحساب</th>
-                  <th className="py-4 px-4 text-sm font-bold text-gray-700">اسم صاحب الحساب</th>
-                  <th className="py-4 px-4 text-sm font-bold text-gray-700">النوع</th>
-                  <th className="py-4 px-4 text-sm font-bold text-gray-700">نطاق التسلسل</th>
-                  <th className="py-4 px-4 text-sm font-bold text-gray-700 text-center">الأوراق</th>
-                  <th className="py-4 px-4 text-sm font-bold text-gray-700">التاريخ والوقت</th>
+                  <th className="py-4 px-4 text-sm font-bold text-gray-700">Account Number</th>
+                  <th className="py-4 px-4 text-sm font-bold text-gray-700">Account Holder</th>
+                  <th className="py-4 px-4 text-sm font-bold text-gray-700">Type</th>
+                  <th className="py-4 px-4 text-sm font-bold text-gray-700">Serial Range</th>
+                  <th className="py-4 px-4 text-sm font-bold text-gray-700 text-center">Sheets</th>
+                  <th className="py-4 px-4 text-sm font-bold text-gray-700">Date & Time</th>
                   {user?.isAdmin && (
                     <>
-                      <th className="py-4 px-4 text-sm font-bold text-gray-700">المستخدم</th>
-                      <th className="py-4 px-4 text-sm font-bold text-gray-700">الفرع</th>
+                      <th className="py-4 px-4 text-sm font-bold text-gray-700">User</th>
+                      <th className="py-4 px-4 text-sm font-bold text-gray-700">Branch</th>
                     </>
                   )}
-                  <th className="py-4 px-4 text-sm font-bold text-gray-700">الحالة</th>
+                  <th className="py-4 px-4 text-sm font-bold text-gray-700">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -620,8 +620,8 @@ export default function ReportsPage() {
                   <tr>
                     <td colSpan={user?.isAdmin ? 10 : 8} className="py-20 text-center text-gray-500">
                       <FileText className="w-20 h-20 mx-auto mb-4 text-gray-200" />
-                      <p className="text-xl font-bold">لا توجد عمليات طباعة مطابقة للبحث</p>
-                      <p className="text-sm mt-2">جرب تغيير إعدادات الفلترة أو تفريغ الفلاتر.</p>
+                      <p className="text-xl font-bold">No print operations match the search</p>
+                      <p className="text-sm mt-2">Try changing filter settings or clearing filters.</p>
                     </td>
                   </tr>
                 ) : (
@@ -639,7 +639,7 @@ export default function ReportsPage() {
                           op.accountType === 3 ? 'bg-purple-100 text-purple-700' :
                             'bg-primary-100 text-primary-700'
                           }`}>
-                          {op.accountType === 1 ? 'فردي' : op.accountType === 2 ? 'شركة' : 'موظف'}
+                          {op.accountType === 1 ? 'Individual' : op.accountType === 2 ? 'Corporate' : 'Employee'}
                         </span>
                       </td>
                       <td className="py-4 px-4 text-sm">
@@ -674,7 +674,7 @@ export default function ReportsPage() {
                               : 'bg-red-100 text-red-700 border border-red-200'
                             }`}
                         >
-                          {op.status === 'COMPLETED' ? 'مكتمل' : op.status === 'PENDING' ? 'قيد الانتظار' : 'فشل'}
+                          {op.status === 'COMPLETED' ? 'Completed' : op.status === 'PENDING' ? 'Pending' : 'Failed'}
                         </span>
                       </td>
                     </tr>

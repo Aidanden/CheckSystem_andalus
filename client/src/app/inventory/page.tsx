@@ -55,7 +55,7 @@ export default function InventoryPage() {
       });
       loadInventoryData();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'فشل في إضافة المخزون');
+      alert(error.response?.data?.error || 'Failed to add stock');
     }
   };
 
@@ -73,13 +73,13 @@ export default function InventoryPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">إدارة المخزون</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Inventory Management</h1>
           <button
             onClick={() => setShowAddModal(true)}
             className="btn btn-primary flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
-            إضافة مخزون
+            Add Stock
           </button>
         </div>
 
@@ -89,14 +89,14 @@ export default function InventoryPage() {
             <div key={item.id} className="card">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">
-                  {item.stockType === 1 ? 'شيكات أفراد وموظفين' : 'شيكات شركات'}
+                  {item.stockType === 1 ? 'Individual & Employee Checks' : 'Corporate Checks'}
                 </h3>
                 <Package className="w-8 h-8 text-blue-500" />
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">الكمية المتاحة:</span>
+                  <span className="text-gray-600">Available Quantity:</span>
                   <span className="text-2xl font-bold text-gray-800">
                     {item.quantity}
                   </span>
@@ -111,10 +111,10 @@ export default function InventoryPage() {
                     }`}
                 >
                   {item.quantity > 100
-                    ? 'المخزون جيد'
+                    ? 'Stock OK'
                     : item.quantity > 50
-                      ? 'المخزون متوسط'
-                      : 'المخزون منخفض - يرجى إضافة مخزون'}
+                      ? 'Stock Medium'
+                      : 'Stock Low - Please add stock'}
                 </div>
               </div>
             </div>
@@ -124,7 +124,7 @@ export default function InventoryPage() {
         {/* Transaction History */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
-            سجل حركة المخزون
+            Inventory Transaction History
           </h2>
 
           <div className="overflow-x-auto">
@@ -132,19 +132,19 @@ export default function InventoryPage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    النوع
+                    Type
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    العملية
+                    Operation
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    الكمية
+                    Quantity
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    التاريخ
+                    Date
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    ملاحظات
+                    Notes
                   </th>
                 </tr>
               </thead>
@@ -152,7 +152,7 @@ export default function InventoryPage() {
                 {transactions.map((trans) => (
                   <tr key={trans.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-sm">
-                      {trans.stockType === 1 ? 'أفراد/موظفين' : 'شركات'}
+                      {trans.stockType === 1 ? 'Individual/Employee' : 'Corporate'}
                     </td>
                     <td className="py-3 px-4">
                       <span
@@ -166,7 +166,7 @@ export default function InventoryPage() {
                         ) : (
                           <TrendingDown className="w-4 h-4" />
                         )}
-                        {trans.transactionType === 'ADD' ? 'إضافة' : 'خصم'}
+                        {trans.transactionType === 'ADD' ? 'Add' : 'Deduct'}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-sm font-mono">{trans.quantity}</td>
@@ -188,12 +188,12 @@ export default function InventoryPage() {
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="card max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">إضافة مخزون جديد</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Add New Stock</h2>
 
             <form onSubmit={handleAddStock} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  نوع الشيكات
+                  Check Type
                 </label>
                 <select
                   value={addForm.stock_type}
@@ -203,14 +203,14 @@ export default function InventoryPage() {
                   className="input"
                   required
                 >
-                  <option value={1}>شيكات أفراد وموظفين</option>
-                  <option value={2}>شيكات شركات</option>
+                  <option value={1}>Individual & Employee Checks</option>
+                  <option value={2}>Corporate Checks</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  الكمية
+                  Quantity
                 </label>
                 <input
                   type="number"
@@ -226,7 +226,7 @@ export default function InventoryPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  ملاحظات
+                  Notes
                 </label>
                 <textarea
                   value={addForm.notes}
@@ -238,14 +238,14 @@ export default function InventoryPage() {
 
               <div className="flex gap-3 pt-4">
                 <button type="submit" className="flex-1 btn btn-primary">
-                  إضافة
+                  Add
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
                   className="flex-1 btn btn-secondary"
                 >
-                  إلغاء
+                  Cancel
                 </button>
               </div>
             </form>

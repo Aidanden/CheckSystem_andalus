@@ -5,7 +5,7 @@ const app = express();
 const PORT = 8080;
 
 // بيانات الحسابات التجريبية
-// accountType: 1 = Individual (25 شيك), 2 = Corporate (50 شيك), 3 = Employee (10 شيك)
+// accountType: 1 = Individual (25 شيك), 2 = Corporate (50 شيك), 3 = Employee (10 شيك) 
 const TEST_ACCOUNTS = [
    // فرع طرابلس 001
    { branch: '001', account: '001001000100001', name: 'شركة ليبيا للاتصالات', startCheck: '1001', accountType: 2 }, // Corporate

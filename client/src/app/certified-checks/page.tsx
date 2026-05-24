@@ -45,7 +45,7 @@ export default function CertifiedChecksPage() {
             setAvailableStock((stockData as any).quantity);
         } catch (err) {
             console.error('Error loading data:', err);
-            setError('فشل في تحميل البيانات');
+            setError('Failed to load data');
         } finally {
             setLoading(false);
         }
@@ -75,29 +75,29 @@ export default function CertifiedChecksPage() {
 
     const handlePrint = async () => {
         if (!selectedBranch) {
-            setError('يرجى اختيار الفرع أولاً');
+            setError('Please select a branch first');
             return;
         }
 
         // Find selected branch
         const branch = branches.find(b => b.id === selectedBranch);
         if (!branch) {
-            setError('الفرع غير موجود');
+            setError('Branch not found');
             return;
         }
 
         if (!branch.accountingNumber) {
-            setError('الفرع ليس لديه رقم محاسبي. يرجى تحديثه في إدارة الفروع أولاً.');
+            setError('Branch has no accounting number. Please update it in Branch Management first.');
             return;
         }
 
         if (!branch.routingNumber) {
-            setError('الفرع ليس لديه رقم توجيهي. يرجى تحديثه في إدارة الفروع أولاً.');
+            setError('Branch has no routing number. Please update it in Branch Management first.');
             return;
         }
 
         if (!serialRange) {
-            setError('يرجى الانتظار حتى يتم تحميل نطاق الأرقام التسلسلية');
+            setError('Please wait until serial number range is loaded');
             return;
         }
 
@@ -133,17 +133,17 @@ export default function CertifiedChecksPage() {
                 openPrintWindow(printData);
 
                 const booksCount = printData.numberOfBooks || 1;
-                setSuccess(`تم إصدار ${booksCount} ${booksCount === 1 ? 'دفتر' : 'دفاتر'} بنجاح! (${printData.firstSerial} - ${printData.lastSerial})`);
+                setSuccess(`${booksCount} ${booksCount === 1 ? 'book' : 'books'} issued successfully! (${printData.firstSerial} - ${printData.lastSerial})`);
                 setNotes('');
                 setCustomStartSerial(''); // إعادة تعيين بداية التسلسل
                 loadData(); // Reload statistics
                 loadSerialRange(selectedBranch); // Reload serial range
             } else {
-                throw new Error('فشل في إصدار دفتر الصكوك: لم يتم إرجاع نتيجة ناجحة');
+                throw new Error('Failed to issue certified check book: no success result returned');
             }
         } catch (err: any) {
             console.error('❌ Error printing:', err);
-            const errorMessage = err.response?.data?.error || err.message || 'فشل في إصدار دفتر الصكوك';
+            const errorMessage = err.response?.data?.error || err.message || 'Failed to issue certified check book';
             setError(errorMessage);
         } finally {
             setPrinting(false);
@@ -233,8 +233,8 @@ export default function CertifiedChecksPage() {
                             <Stamp className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-800">إصدار دفاتر الصكوك المصدقة</h1>
-                            <p className="text-gray-600">طباعة دفاتر صكوك مصدقة للفروع (50 ورقة)</p>
+                            <h1 className="text-2xl font-bold text-gray-800">Issue Certified Check Books</h1>
+                            <p className="text-gray-600">Print certified check books for branches (50 sheets)</p>
                         </div>
                     </div>
                     <button
@@ -242,7 +242,7 @@ export default function CertifiedChecksPage() {
                         className="btn btn-secondary flex items-center gap-2"
                     >
                         <RefreshCw className="w-5 h-5" />
-                        تحديث
+                        Refresh
                     </button>
                 </div>
 
@@ -251,7 +251,7 @@ export default function CertifiedChecksPage() {
                     <div className="card bg-gradient-to-br from-amber-50 to-white border-2 border-amber-100">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600 mb-1">إجمالي الدفاتر المطبوعة</p>
+                                <p className="text-sm text-gray-600 mb-1">Total books printed</p>
                                 <p className="text-3xl font-bold text-amber-600">{statistics?.totalBooks || 0}</p>
                             </div>
                             <div className="bg-amber-100 p-3 rounded-xl">
@@ -263,7 +263,7 @@ export default function CertifiedChecksPage() {
                     <div className="card bg-gradient-to-br from-blue-50 to-white border-2 border-blue-100">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600 mb-1">إجمالي الصكوك</p>
+                                <p className="text-sm text-gray-600 mb-1">Total checks</p>
                                 <p className="text-3xl font-bold text-blue-600">{statistics?.totalChecks || 0}</p>
                             </div>
                             <div className="bg-blue-100 p-3 rounded-xl">
@@ -275,7 +275,7 @@ export default function CertifiedChecksPage() {
                     <div className="card bg-gradient-to-br from-green-50 to-white border-2 border-green-100">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600 mb-1">المخزون المتاح</p>
+                                <p className="text-sm text-gray-600 mb-1">Available stock</p>
                                 <p className="text-3xl font-bold text-green-600">{availableStock ?? 0}</p>
                             </div>
                             <div className="bg-green-100 p-3 rounded-xl">
@@ -287,11 +287,11 @@ export default function CertifiedChecksPage() {
                     <div className="card bg-gradient-to-br from-purple-50 to-white border-2 border-purple-100">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600 mb-1">آخر طباعة</p>
+                                <p className="text-sm text-gray-600 mb-1">Last print</p>
                                 <p className="text-lg font-bold text-purple-600">
                                     {statistics?.lastPrintDate
                                         ? new Date(statistics.lastPrintDate).toLocaleDateString('ar-LY')
-                                        : 'لا يوجد'}
+                                        : 'None'}
                                 </p>
                             </div>
                             <div className="bg-purple-100 p-3 rounded-xl">
@@ -306,7 +306,7 @@ export default function CertifiedChecksPage() {
                     <div className="card">
                         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                             <Building2 className="w-5 h-5 text-primary-600" />
-                            آخر تسلسل لكل فرع
+                            Last serial per branch
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {statistics.branchSerials.map((bs) => (
@@ -321,7 +321,7 @@ export default function CertifiedChecksPage() {
 
                 {/* Print Form */}
                 <div className="card">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">إصدار دفتر جديد</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">Issue new book</h3>
 
                     {error && (
                         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700">
@@ -340,7 +340,7 @@ export default function CertifiedChecksPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                اختر الفرع <span className="text-red-500">*</span>
+                                Select branch <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={selectedBranch || ''}

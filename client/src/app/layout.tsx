@@ -4,7 +4,7 @@ import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: 'Check Printing System',
-  description: 'نظام طباعة الشيكات المصرفية',
+  description: 'Bank check printing system',
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="en" dir="ltr">
       <body className="font-sans">
         <Providers>{children}</Providers>
       </body>

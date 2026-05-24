@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>اختبار الطباعة</title>
+    <title>Print Test</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -96,20 +96,20 @@
 
 <body>
     <div class="card">
-        <h1>🖨️ اختبار الطباعة المباشر</h1>
+        <h1>🖨️ Direct Print Test</h1>
 
         <div class="form-group">
             <label for="token">Token:</label>
-            <input type="text" id="token" placeholder="الصق الـ token هنا">
-            <small style="color: #666;">افتح Console واكتب: localStorage.getItem('token')</small>
+            <input type="text" id="token" placeholder="Paste token here">
+            <small style="color: #666;">Open Console and type: localStorage.getItem('token')</small>
         </div>
 
         <div class="form-group">
-            <label for="accountNumber">رقم الحساب:</label>
+            <label for="accountNumber">Account Number:</label>
             <input type="text" id="accountNumber" value="100012345678901">
         </div>
 
-        <button onclick="testPrint()">اختبار الطباعة</button>
+        <button onclick="testPrint()">Test Print</button>
 
         <div id="result"></div>
     </div>
@@ -134,11 +134,11 @@
             }
 
             if (!accountNumber) {
-                resultDiv.innerHTML = '<div class="result error">❌ الرجاء إدخال رقم الحساب</div>';
+                resultDiv.innerHTML = '<div class="result error">❌ Please enter account number</div>';
                 return;
             }
 
-            resultDiv.innerHTML = '<div class="result">⏳ جاري الإرسال...</div>';
+            resultDiv.innerHTML = '<div class="result">⏳ Sending...</div>';
 
             const requestData = {
                 account_number: accountNumber
@@ -169,15 +169,15 @@
                 if (response.ok) {
                     resultDiv.innerHTML = `
                         <div class="result success">
-                            <h3>✅ نجحت الطباعة!</h3>
+                            <h3>✅ Print succeeded!</h3>
                             <pre>${JSON.stringify(data, null, 2)}</pre>
                         </div>
                     `;
                 } else {
                     resultDiv.innerHTML = `
                         <div class="result error">
-                            <h3>❌ فشلت الطباعة</h3>
-                            <p><strong>الخطأ:</strong> ${data.error || 'خطأ غير معروف'}</p>
+                            <h3>❌ Print failed</h3>
+                            <p><strong>Error:</strong> ${data.error || 'Unknown error'}</p>
                             <pre>${JSON.stringify(data, null, 2)}</pre>
                         </div>
                     `;
@@ -186,7 +186,7 @@
                 console.error('❌ Network error:', error);
                 resultDiv.innerHTML = `
                     <div class="result error">
-                        <h3>❌ خطأ في الاتصال</h3>
+                        <h3>❌ Connection error</h3>
                         <p>${error.message}</p>
                     </div>
                 `;

@@ -26,7 +26,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (!currentUser?.isAdmin) {
-      alert('ليس لديك صلاحية الوصول لهذه الصفحة');
+      alert('You do not have permission to access this page');
       window.location.href = '/dashboard';
       return;
     }
@@ -56,7 +56,7 @@ export default function UsersPage() {
 
     try {
       if (!formData.is_admin && !formData.branch_id) {
-        alert('يجب اختيار فرع للمستخدم العادي');
+        alert('You must select a branch for a regular user');
         return;
       }
 
@@ -83,7 +83,7 @@ export default function UsersPage() {
       });
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'فشل في حفظ المستخدم');
+      alert(error.response?.data?.error || 'Failed to save user');
     }
   };
 
@@ -100,13 +100,13 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (userId: number) => {
-    if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+    if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
       await userService.delete(userId);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'فشل في حذف المستخدم');
+      alert(error.response?.data?.error || 'Failed to delete user');
     }
   };
 
@@ -124,7 +124,7 @@ export default function UsersPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">إدارة المستخدمين</h1>
+          <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
           <button
             onClick={() => {
               setEditingUser(null);
@@ -140,7 +140,7 @@ export default function UsersPage() {
             className="btn btn-primary flex items-center gap-2"
           >
             <UserPlus className="w-5 h-5" />
-            إضافة مستخدم
+            Add User
           </button>
         </div>
 
@@ -151,22 +151,22 @@ export default function UsersPage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    اسم المستخدم
+                    Username
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    الفرع
+                    Branch
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    الصلاحيات
+                    Permissions
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    النوع
+                    Type
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    الحالة
+                    Status
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    إجراءات
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -175,7 +175,7 @@ export default function UsersPage() {
                   <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-sm font-medium">{user.username}</td>
                     <td className="py-3 px-4 text-sm">
-                      {user.branch?.branchName || 'غير محدد'}
+                      {user.branch?.branchName || 'Not set'}
                     </td>
                     <td className="py-3 px-4 text-sm">
                       <div className="flex flex-wrap gap-1">
@@ -201,7 +201,7 @@ export default function UsersPage() {
                           : 'bg-gray-100 text-gray-700'
                           }`}
                       >
-                        {user.isAdmin ? 'مسؤول' : 'مستخدم'}
+                        {user.isAdmin ? 'Admin' : 'User'}
                       </span>
                     </td>
                     <td className="py-3 px-4">
@@ -211,7 +211,7 @@ export default function UsersPage() {
                           : 'bg-red-100 text-red-700'
                           }`}
                       >
-                        {user.isActive ? 'نشط' : 'معطل'}
+                        {user.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="py-3 px-4">
@@ -244,13 +244,13 @@ export default function UsersPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
           <div className="card max-w-2xl w-full mx-4 my-8">
             <h2 className="text-xl font-bold text-gray-800 mb-4">
-              {editingUser ? 'تعديل مستخدم' : 'إضافة مستخدم جديد'}
+              {editingUser ? 'Edit User' : 'Add New User'}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  اسم المستخدم
+                  Username
                 </label>
                 <input
                   type="text"
@@ -263,7 +263,7 @@ export default function UsersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  كلمة المرور {editingUser && '(اتركه فارغاً إذا لم ترد تغييره)'}
+                  Password {editingUser && '(leave blank to keep unchanged)'}
                 </label>
                 <input
                   type="password"
@@ -276,7 +276,7 @@ export default function UsersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  الفرع
+                  Branch
                 </label>
                 <select
                   value={formData.branch_id || ''}
@@ -289,8 +289,8 @@ export default function UsersPage() {
                   className="input"
                   required={!formData.is_admin}
                 >
-                  {formData.is_admin && <option value="">بدون فرع (صلاحية كاملة)</option>}
-                  {!formData.is_admin && <option value="" disabled>اختر الفرع...</option>}
+                  {formData.is_admin && <option value="">No branch (full access)</option>}
+                  {!formData.is_admin && <option value="" disabled>Select branch...</option>}
                   {branches.map((branch) => (
                     <option key={branch.id} value={branch.id}>
                       {branch.branchName}
@@ -308,30 +308,30 @@ export default function UsersPage() {
                   className="rounded"
                 />
                 <label htmlFor="is_admin" className="text-sm font-medium text-gray-700">
-                  مسؤول (صلاحيات كاملة)
+                  Admin (full permissions)
                 </label>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 border-b pb-2">
-                  الصلاحيات حسب المجموعات
+                  Permissions by group
                 </label>
                 <div className="space-y-6 max-h-[400px] overflow-y-auto p-2 pr-4 border rounded-xl bg-gray-50/30">
                   {[
                     {
-                      name: 'طباعة الشيك المصدق (أفراد)',
+                      name: 'Certified Check Print (Individual)',
                       codes: ['SCREEN_CERTIFIED_PRINT', 'SCREEN_CERTIFIED_REPORTS', 'REPRINT_CERTIFIED']
                     },
                     {
-                      name: 'طباعة دفاتر المصدقة',
+                      name: 'Certified Books Print',
                       codes: ['SCREEN_CERTIFIED_BOOKS', 'SCREEN_CERTIFIED_LOGS', 'CERTIFIED_INVENTORY_MANAGEMENT']
                     },
                     {
-                      name: 'شيكات الأفراد والشركات',
+                      name: 'Individual & Corporate Checks',
                       codes: ['SCREEN_PRINT', 'SCREEN_PRINT_LOGS', 'INVENTORY_MANAGEMENT', 'REPRINT']
                     },
                     {
-                      name: 'إدارة النظام والتقارير العامة',
+                      name: 'System Management & Reports',
                       codes: ['MANAGE_USERS', 'MANAGE_BRANCHES', 'SYSTEM_SETTINGS', 'SCREEN_REPORTS']
                     }
                   ].map((group) => (

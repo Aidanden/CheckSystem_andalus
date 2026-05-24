@@ -147,7 +147,7 @@ export async function querySoapCheckbook(
 
   const detailsNode = doc.getElementsByTagName('Chq-Bk-Details-Full')[0] as Element | undefined;
   if (!detailsNode) {
-    throw new Error('لم يتم العثور على تفاصيل دفتر الشيكات في استجابة SOAP');
+    throw new Error('Checkbook details not found in SOAP response');
   }
 
   const chequeStatuses = parseStatuses(detailsNode);
@@ -215,7 +215,7 @@ export function buildPreviewFromSoap(
     accountType = data.accountNumber.startsWith('2') ? 2 : 1;
   }
   
-  const accountHolderName = options.accountHolderName || data.customerName || 'صاحب الحساب';
+  const accountHolderName = options.accountHolderName || data.customerName || 'Account Holder';
 
   const layout = options.layout;
   const positions = {
@@ -230,7 +230,7 @@ export function buildPreviewFromSoap(
   const checkWidth = layout?.checkWidth ?? DEFAULT_LAYOUT.checkWidth;
   const checkHeight = layout?.checkHeight ?? DEFAULT_LAYOUT.checkHeight;
 
-  const branchLabel = options.branchName ?? `فرع ${data.accountBranch}`;
+  const branchLabel = options.branchName ?? `Branch ${data.accountBranch}`;
   const routingNumber = options.routingNumber ?? data.accountBranch;
 
   // إنشاء الشيكات فقط للشيكات الصالحة

@@ -60,8 +60,8 @@ export default function DashboardPage() {
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">لوحة التحكم</h1>
-            <p className="text-gray-600">نظرة عامة على نظام طباعة الشيكات</p>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h1>
+            <p className="text-gray-600">Overview of the check printing system</p>
           </div>
         </div>
 
@@ -70,7 +70,7 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl shadow-lg p-6 border-r-4 border-primary-500 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-2">إجمالي العمليات</p>
+                <p className="text-sm text-gray-600 mb-2">Total Operations</p>
                 <p className="text-3xl font-bold text-gray-800">
                   {statistics?.total_operations || 0}
                 </p>
@@ -84,7 +84,7 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl shadow-lg p-6 border-r-4 border-emerald-500 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-2">أوراق مطبوعة</p>
+                <p className="text-sm text-gray-600 mb-2">Sheets Printed</p>
                 <p className="text-3xl font-bold text-gray-800">
                   {statistics?.total_sheets_printed || 0}
                 </p>
@@ -98,7 +98,7 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl shadow-lg p-6 border-r-4 border-blue-500 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-2">شركات (50)</p>
+                <p className="text-sm text-gray-600 mb-2">Corporate (50)</p>
                 <p className="text-3xl font-bold text-gray-800">
                   {statistics?.corporate_50 || 0}
                 </p>
@@ -112,7 +112,7 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl shadow-lg p-6 border-r-4 border-amber-500 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-2">أفراد (25)</p>
+                <p className="text-sm text-gray-600 mb-2">Individual (25)</p>
                 <p className="text-3xl font-bold text-gray-800">
                   {statistics?.individual_25 || 0}
                 </p>
@@ -126,7 +126,7 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl shadow-lg p-6 border-r-4 border-purple-500 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-2">موظفين (10)</p>
+                <p className="text-sm text-gray-600 mb-2">Employees (10)</p>
                 <p className="text-3xl font-bold text-gray-800">
                   {statistics?.employees_10 || 0}
                 </p>
@@ -144,26 +144,26 @@ export default function DashboardPage() {
             <div className="bg-primary-100 p-3 rounded-xl">
               <Clock className="w-6 h-6 text-primary-600" />
             </div>
-            <h2 className="text-xl font-bold text-gray-800">آخر العمليات</h2>
+            <h2 className="text-xl font-bold text-gray-800">Recent Operations</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b-2 border-gray-200 bg-gray-50">
                   <th className="text-right py-4 px-4 text-sm font-bold text-gray-700">
-                    رقم الحساب
+                    Account Number
                   </th>
                   <th className="text-right py-4 px-4 text-sm font-bold text-gray-700">
-                    النوع
+                    Type
                   </th>
                   <th className="text-right py-4 px-4 text-sm font-bold text-gray-700">
-                    الأوراق
+                    Sheets
                   </th>
                   <th className="text-right py-4 px-4 text-sm font-bold text-gray-700">
-                    التاريخ
+                    Date
                   </th>
                   <th className="text-right py-4 px-4 text-sm font-bold text-gray-700">
-                    الحالة
+                    Status
                   </th>
                 </tr>
               </thead>
@@ -177,7 +177,7 @@ export default function DashboardPage() {
                           ? 'bg-blue-100 text-blue-700'
                           : 'bg-purple-100 text-purple-700'
                           }`}>
-                          {op.accountType === 1 ? 'فردي' : 'شركة'}
+                          {op.accountType === 1 ? 'Individual' : 'Corporate'}
                         </span>
                       </td>
                       <td className="py-4 px-4 text-sm font-semibold text-primary-600">{op.sheetsPrinted}</td>
@@ -195,7 +195,7 @@ export default function DashboardPage() {
                   <tr>
                     <td colSpan={5} className="text-center py-12 text-gray-500">
                       <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                      <p className="font-semibold">لا توجد عمليات حتى الآن</p>
+                      <p className="font-semibold">No operations yet</p>
                     </td>
                   </tr>
                 )}

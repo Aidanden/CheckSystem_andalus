@@ -90,7 +90,7 @@ export default function SettingsPage() {
   const handleSoapEndpointSave = async () => {
     const value = soapApiEndpoint.trim();
     if (!value) {
-      setSoapApiMessage({ type: 'error', text: 'الرجاء إدخال رابط SOAP صالح.' });
+      setSoapApiMessage({ type: 'error', text: 'Please enter a valid SOAP URL.' });
       return;
     }
 
@@ -99,10 +99,10 @@ export default function SettingsPage() {
     try {
       const { endpoint } = await systemSettingsService.updateSoapEndpoint(value);
       setSoapApiEndpoint(endpoint);
-      setSoapApiMessage({ type: 'success', text: 'تم حفظ رابط SOAP بنجاح.' });
+      setSoapApiMessage({ type: 'success', text: 'SOAP URL saved successfully.' });
     } catch (err: any) {
       const apiError = err?.response?.data?.error;
-      setSoapApiMessage({ type: 'error', text: apiError || 'فشل في حفظ رابط SOAP.' });
+      setSoapApiMessage({ type: 'error', text: apiError || 'Failed to save SOAP URL.' });
     } finally {
       setSoapApiSaving(false);
     }
@@ -111,7 +111,7 @@ export default function SettingsPage() {
   const handleSoapIAEndpointSave = async () => {
     const value = soapIAEndpoint.trim();
     if (!value) {
-      setSoapIAApiMessage({ type: 'error', text: 'الرجاء إدخال رابط SOAP IA صالح.' });
+      setSoapIAApiMessage({ type: 'error', text: 'Please enter a valid SOAP IA URL.' });
       return;
     }
 
@@ -120,10 +120,10 @@ export default function SettingsPage() {
     try {
       const { endpoint } = await systemSettingsService.updateSoapIAEndpoint(value);
       setSoapIAEndpoint(endpoint);
-      setSoapIAApiMessage({ type: 'success', text: 'تم حفظ رابط SOAP IA بنجاح.' });
+      setSoapIAApiMessage({ type: 'success', text: 'SOAP IA URL saved successfully.' });
     } catch (err: any) {
       const apiError = err?.response?.data?.error;
-      setSoapIAApiMessage({ type: 'error', text: apiError || 'فشل في حفظ رابط SOAP IA.' });
+      setSoapIAApiMessage({ type: 'error', text: apiError || 'Failed to save SOAP IA URL.' });
     } finally {
       setSoapIAApiSaving(false);
     }
@@ -149,7 +149,7 @@ export default function SettingsPage() {
       setSoapApiEndpoint(endpoint);
     } catch (err) {
       console.error('فشل تحميل رابط SOAP:', err);
-      setSoapApiMessage({ type: 'error', text: 'تعذر تحميل رابط SOAP الحالي، سيتم استخدام القيمة الافتراضية.' });
+      setSoapApiMessage({ type: 'error', text: 'Could not load current SOAP URL; default will be used.' });
     } finally {
       setSoapApiLoading(false);
     }
@@ -163,7 +163,7 @@ export default function SettingsPage() {
       setSoapIAEndpoint(endpoint);
     } catch (err) {
       console.error('فشل تحميل رابط SOAP IA:', err);
-      setSoapIAApiMessage({ type: 'error', text: 'تعذر تحميل رابط SOAP IA الحالي، سيتم استخدام القيمة الافتراضية.' });
+      setSoapIAApiMessage({ type: 'error', text: 'Could not load current SOAP IA URL; default will be used.' });
     } finally {
       setSoapIAApiLoading(false);
     }
@@ -235,7 +235,7 @@ export default function SettingsPage() {
       const token = localStorage.getItem('token');
 
       if (!token) {
-        setError('الرجاء تسجيل الدخول');
+        setError('Please sign in');
         return;
       }
 
@@ -251,12 +251,12 @@ export default function SettingsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess('تم حفظ الإعدادات بنجاح!');
+        setSuccess('Settings saved successfully!');
       } else {
-        setError(data.error || 'فشل في حفظ الإعدادات');
+        setError(data.error || 'Failed to save settings');
       }
     } catch (err) {
-      setError('فشل في حفظ الإعدادات');
+      setError('Failed to save settings');
       console.error('Error saving settings:', err);
     } finally {
       setLoading(false);
@@ -264,14 +264,14 @@ export default function SettingsPage() {
   };
 
   const handleReset = () => {
-    if (confirm('هل أنت متأكد من إعادة تعيين الإعدادات للقيم الافتراضية؟')) {
+    if (confirm('Are you sure you want to reset settings to default values?')) {
       const defaults = activeTab === 1
         ? DEFAULT_INDIVIDUAL
         : activeTab === 2
           ? DEFAULT_CORPORATE
           : DEFAULT_BANK_STAFF;
       setCurrentSettings(() => defaults);
-      setSuccess('تم إعادة تعيين الإعدادات');
+      setSuccess('Settings have been reset');
     }
   };
 
@@ -279,7 +279,7 @@ export default function SettingsPage() {
     // للشيكات المصدقة (Tab 4)، نستخدم معاينة مختلفة
     if (activeTab === 4) {
       const testSerialNumber = '000000001';
-      const testBranchName = 'فرع طرابلس';
+      const testBranchName = 'Tripoli Branch';
       const testAccountingNumber = '0010010001';
       const testRoutingNumber = '11000000';
 
@@ -290,7 +290,7 @@ export default function SettingsPage() {
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <title>معاينة شيك مصدق</title>
+  <title>Certified Check Preview</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     @page { size: ${currentSettings.checkWidth}mm ${currentSettings.checkHeight}mm; margin: 0; }
@@ -331,11 +331,11 @@ export default function SettingsPage() {
     const testCheckData = {
       checkNumber: 1,
       serialNumber: '000000001',
-      accountHolderName: 'أحمد محمد علي السيد',
+      accountHolderName: 'Ahmed Mohamed Ali',
       accountNumber: '001001000811217',
-      accountType: activeTab === 1 ? 'فردي' : activeTab === 2 ? 'شركة' : 'موظف',
+      accountType: activeTab === 1 ? 'Individual' : activeTab === 2 ? 'Corporate' : 'Employee',
       routingNumber: '1100000001',
-      branchName: 'الفرع الرئيسي',
+      branchName: 'Main Branch',
       micrLine: `0${activeTab} 1100000001 001001000811217 000000001`,
       checkSize: {
         width: currentSettings.checkWidth,
@@ -389,7 +389,7 @@ export default function SettingsPage() {
 
       const printWindow = window.open('', '_blank');
       if (!printWindow) {
-        setError('فشل فتح نافذة الطباعة. يرجى السماح بالنوافذ المنبثقة.');
+        setError('Failed to open print window. Please allow popups.');
         return;
       }
 
@@ -397,7 +397,7 @@ export default function SettingsPage() {
       printWindow.document.close();
     } catch (err) {
       console.error('Error in test print:', err);
-      setError('فشل في إنشاء معاينة الطباعة');
+      setError('Failed to create print preview');
     }
   };
 
@@ -417,15 +417,15 @@ export default function SettingsPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <SettingsIcon className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-800">إعدادات الطباعة</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Print Settings</h1>
           </div>
         </div>
 
         <div className="card space-y-4">
           <div className="flex flex-col gap-2">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">رابط SOAP API</h2>
-              <p className="text-sm text-gray-600">يمكنك تغيير رابط خدمة SOAP لاختبار بيئات مختلفة دون الحاجة لإعادة نشر النظام.</p>
+              <h2 className="text-lg font-semibold text-gray-800">SOAP API URL</h2>
+              <p className="text-sm text-gray-600">You can change the SOAP service URL to test different environments without redeploying.</p>
             </div>
             {soapApiMessage && (
               <div className={`${soapApiMessage.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'} border px-3 py-2 rounded`}>
@@ -435,7 +435,7 @@ export default function SettingsPage() {
           </div>
 
           <label className="block text-sm text-gray-600" htmlFor="soap-endpoint-input">
-            رابط SOAP الحالي
+            Current SOAP URL
           </label>
           <input
             id="soap-endpoint-input"
@@ -457,12 +457,12 @@ export default function SettingsPage() {
               {soapApiSaving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  جاري الحفظ...
+                  Saving...
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  حفظ الرابط
+                  Save URL
                 </>
               )}
             </button>
@@ -474,19 +474,19 @@ export default function SettingsPage() {
               className="btn bg-gray-100 text-gray-800 hover:bg-gray-200 flex items-center gap-2 disabled:opacity-50"
             >
               <RefreshCw className={soapApiLoading ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />
-              إعادة تحميل الرابط
+              Reload URL
             </button>
 
             <div className="text-xs text-gray-500 flex items-center">
-              {soapApiLoading ? 'جاري تحميل الرابط من الخادم...' : 'آخر قيمة محمّلة من الخادم'}
+              {soapApiLoading ? 'Loading URL from server...' : 'Last value loaded from server'}
             </div>
           </div>
 
           <div className="border-t pt-4 mt-4">
             <div className="flex flex-col gap-2">
               <div>
-                <h2 className="text-lg font-semibold text-gray-800">رابط SOAP API (الأسماء)</h2>
-                <p className="text-sm text-gray-600">رابط خدمة SOAP الخاصة بجلب أسماء أصحاب الحسابات (FCUBSIAService).</p>
+                <h2 className="text-lg font-semibold text-gray-800">SOAP API URL (Names)</h2>
+                <p className="text-sm text-gray-600">SOAP service URL for fetching account holder names (FCUBSIAService).</p>
               </div>
               {soapIAApiMessage && (
                 <div className={`${soapIAApiMessage.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'} border px-3 py-2 rounded`}>
@@ -496,7 +496,7 @@ export default function SettingsPage() {
             </div>
 
             <label className="block text-sm text-gray-600 mt-3" htmlFor="soap-ia-endpoint-input">
-              رابط SOAP IA الحالي
+              Current SOAP IA URL
             </label>
             <input
               id="soap-ia-endpoint-input"
@@ -518,12 +518,12 @@ export default function SettingsPage() {
                 {soapIAApiSaving ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    جاري الحفظ...
+                    Saving...
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    حفظ الرابط
+                    Save URL
                   </>
                 )}
               </button>
@@ -535,11 +535,11 @@ export default function SettingsPage() {
                 className="btn bg-gray-100 text-gray-800 hover:bg-gray-200 flex items-center gap-2 disabled:opacity-50"
               >
                 <RefreshCw className={soapIAApiLoading ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />
-                إعادة تحميل الرابط
-              </button>
+Reload URL
+            </button>
 
               <div className="text-xs text-gray-500 flex items-center">
-                {soapIAApiLoading ? 'جاري تحميل الرابط من الخادم...' : 'آخر قيمة محمّلة من الخادم'}
+                {soapIAApiLoading ? 'Loading URL from server...' : 'Last value loaded from server'}
               </div>
             </div>
           </div>
@@ -555,7 +555,7 @@ export default function SettingsPage() {
                 : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
-              شيكات الأفراد (25 ورقة)
+              Individual (25 sheets)
             </button>
             <button
               onClick={() => setActiveTab(2)}
@@ -564,7 +564,7 @@ export default function SettingsPage() {
                 : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
-              شيكات الشركات (50 ورقة)
+              Corporate (50 sheets)
             </button>
             <button
               onClick={() => setActiveTab(3)}
@@ -573,7 +573,7 @@ export default function SettingsPage() {
                 : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
-              شيكات موظفين (10 ورقة)
+              Employee (10 sheets)
             </button>
           </div>
         </div>
@@ -595,17 +595,17 @@ export default function SettingsPage() {
           {/* Settings Form */}
           <div className="card space-y-6">
             <h2 className="text-lg font-semibold text-gray-800">
-              مواصفات الشيك
+              Check Specifications
             </h2>
 
             {/* Check Dimensions */}
             <div className="space-y-4">
-              <h3 className="font-medium text-gray-700">المقاسات (ملم)</h3>
+              <h3 className="font-medium text-gray-700">Dimensions (mm)</h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">
-                    العرض (الطول)
+                    Width
                   </label>
                   <input
                     type="number"
@@ -618,7 +618,7 @@ export default function SettingsPage() {
 
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">
-                    الارتفاع
+                    Height
                   </label>
                   <input
                     type="number"
@@ -633,11 +633,11 @@ export default function SettingsPage() {
 
             {/* Branch Name Position */}
             <div className="space-y-4 border-t pt-4">
-              <h3 className="font-medium text-gray-700">اسم الفرع</h3>
+              <h3 className="font-medium text-gray-700">Branch Name</h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">X (من اليسار)</label>
+                  <label className="block text-sm text-gray-600 mb-1">X (from left)</label>
                   <input
                     type="number"
                     value={currentSettings.branchName.x}
@@ -648,7 +648,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Y (من الأعلى)</label>
+                  <label className="block text-sm text-gray-600 mb-1">Y (from top)</label>
                   <input
                     type="number"
                     value={currentSettings.branchName.y}
@@ -659,7 +659,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                  <label className="block text-sm text-gray-600 mb-1">Font size</label>
                   <input
                     type="number"
                     value={currentSettings.branchName.fontSize}
@@ -669,15 +669,15 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                  <label className="block text-sm text-gray-600 mb-1">Alignment</label>
                   <select
                     value={currentSettings.branchName.align}
                     onChange={(e) => updatePosition('branchName', 'align', e.target.value)}
                     className="input w-full"
                   >
-                    <option value="left">يسار</option>
-                    <option value="center">وسط</option>
-                    <option value="right">يمين</option>
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
                   </select>
                 </div>
               </div>
@@ -686,11 +686,11 @@ export default function SettingsPage() {
             {/* Account Number Position */}
             {activeTab !== 4 && currentSettings.accountNumber && (
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-medium text-gray-700">رقم الحساب</h3>
+                <h3 className="font-medium text-gray-700">Account Number</h3>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">X (من اليسار)</label>
+                    <label className="block text-sm text-gray-600 mb-1">X (from left)</label>
                     <input
                       type="number"
                       value={currentSettings.accountNumber.x}
@@ -701,7 +701,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Y (من الأعلى)</label>
+                    <label className="block text-sm text-gray-600 mb-1">Y (from top)</label>
                     <input
                       type="number"
                       value={currentSettings.accountNumber.y}
@@ -712,7 +712,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                    <label className="block text-sm text-gray-600 mb-1">Font size</label>
                     <input
                       type="number"
                       value={currentSettings.accountNumber.fontSize}
@@ -722,15 +722,15 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                    <label className="block text-sm text-gray-600 mb-1">Alignment</label>
                     <select
                       value={currentSettings.accountNumber.align}
                       onChange={(e) => updatePosition('accountNumber', 'align', e.target.value)}
                       className="input w-full"
                     >
-                      <option value="left">يسار</option>
-                      <option value="center">وسط</option>
-                      <option value="right">يمين</option>
+                      <option value="left">Left</option>
+                      <option value="center">Center</option>
+                      <option value="right">Right</option>
                     </select>
                   </div>
                 </div>
@@ -738,7 +738,7 @@ export default function SettingsPage() {
             )}
             {/* Serial Number Position */}
             <div className="space-y-4 border-t pt-4">
-              <h3 className="font-medium text-gray-700">الرقم التسلسلي</h3>
+              <h3 className="font-medium text-gray-700">Serial Number</h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -764,7 +764,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                  <label className="block text-sm text-gray-600 mb-1">Font size</label>
                   <input
                     type="number"
                     value={currentSettings.serialNumber.fontSize}
@@ -774,15 +774,15 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                  <label className="block text-sm text-gray-600 mb-1">Alignment</label>
                   <select
                     value={currentSettings.serialNumber.align}
                     onChange={(e) => updatePosition('serialNumber', 'align', e.target.value)}
                     className="input w-full"
                   >
-                    <option value="left">يسار</option>
-                    <option value="center">وسط</option>
-                    <option value="right">يمين</option>
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
                   </select>
                 </div>
               </div>
@@ -790,11 +790,11 @@ export default function SettingsPage() {
 
             {/* Check Sequence Position */}
             <div className="space-y-4 border-t pt-4">
-              <h3 className="font-medium text-gray-700">رقم التسلسل الثاني</h3>
+              <h3 className="font-medium text-gray-700">Second Serial Number</h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">X (من اليسار)</label>
+                  <label className="block text-sm text-gray-600 mb-1">X (from left)</label>
                   <input
                     type="number"
                     value={currentSettings.checkSequence.x}
@@ -805,7 +805,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Y (من الأعلى)</label>
+                  <label className="block text-sm text-gray-600 mb-1">Y (from top)</label>
                   <input
                     type="number"
                     value={currentSettings.checkSequence.y}
@@ -816,7 +816,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                  <label className="block text-sm text-gray-600 mb-1">Font size</label>
                   <input
                     type="number"
                     value={currentSettings.checkSequence.fontSize}
@@ -826,15 +826,15 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                  <label className="block text-sm text-gray-600 mb-1">Alignment</label>
                   <select
                     value={currentSettings.checkSequence.align}
                     onChange={(e) => updatePosition('checkSequence', 'align', e.target.value)}
                     className="input w-full"
                   >
-                    <option value="left">يسار</option>
-                    <option value="center">وسط</option>
-                    <option value="right">يمين</option>
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
                   </select>
                 </div>
               </div>
@@ -843,7 +843,7 @@ export default function SettingsPage() {
             {/* Account Holder Name Position */}
             {activeTab !== 4 && (
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-medium text-gray-700">اسم صاحب الحساب</h3>
+                <h3 className="font-medium text-gray-700">Account Holder Name</h3>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -869,7 +869,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                    <label className="block text-sm text-gray-600 mb-1">Font size</label>
                     <input
                       type="number"
                       value={currentSettings.accountHolderName.fontSize}
@@ -879,15 +879,15 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                    <label className="block text-sm text-gray-600 mb-1">Alignment</label>
                     <select
                       value={currentSettings.accountHolderName.align}
                       onChange={(e) => updatePosition('accountHolderName', 'align', e.target.value)}
                       className="input w-full"
                     >
-                      <option value="left">يسار</option>
-                      <option value="center">وسط</option>
-                      <option value="right">يمين</option>
+                      <option value="left">Left</option>
+                      <option value="center">Center</option>
+                      <option value="right">Right</option>
                     </select>
                   </div>
                 </div>
@@ -901,7 +901,7 @@ export default function SettingsPage() {
                 <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
                   <p className="font-medium mb-1">ترتيب البيانات (من اليمين لليسار - RTL):</p>
                   <p className="font-mono text-xs">
-                    [نوع الصك: 01 أفراد / 02 شركات] [رقم الحساب 15 رقم] [الرقم التوجيهي] [رقم التسلسل 9 أرقام]
+                    [نوع الصك: 01 أفراد / 02 شركات] [Account Number 15 رقم] [الرقم التوجيهي] [رقم التسلسل 9 أرقام]
                   </p>
                   <p className="mt-1 font-mono text-xs text-blue-600">
                     مثال: 01 100012345678901 1100000001 000000001
@@ -933,7 +933,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                  <label className="block text-sm text-gray-600 mb-1">Font size</label>
                   <input
                     type="number"
                     value={currentSettings.micrLine.fontSize}
@@ -943,15 +943,15 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                  <label className="block text-sm text-gray-600 mb-1">Alignment</label>
                   <select
                     value={currentSettings.micrLine.align}
                     onChange={(e) => updatePosition('micrLine', 'align', e.target.value)}
                     className="input w-full"
                   >
-                    <option value="left">يسار</option>
-                    <option value="center">وسط</option>
-                    <option value="right">يمين</option>
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
                   </select>
                 </div>
               </div>
@@ -1101,7 +1101,7 @@ export default function SettingsPage() {
                 <p className="font-medium text-green-800 mb-1">📋 تكوين خط MICR (من اليمين لليسار):</p>
                 <div className="font-mono text-xs text-green-700 space-y-1">
                   <p className="text-right">• <span className="text-green-900 font-bold">01</span> (أفراد) أو <span className="text-green-900 font-bold">02</span> (شركات) - النوع (يمين)</p>
-                  <p className="text-right">• <span className="text-green-900 font-bold">100012345678901</span> (15 رقم) - رقم الحساب</p>
+                  <p className="text-right">• <span className="text-green-900 font-bold">100012345678901</span> (15 رقم) - Account Number</p>
                   <p className="text-right">• <span className="text-green-900 font-bold">1100000001</span> - الرقم التوجيهي (رقم الفرع)</p>
                   <p className="text-right">• <span className="text-green-900 font-bold">000000001</span> (9 أرقام) - التسلسل (يسار)</p>
                 </div>

@@ -152,7 +152,7 @@ function renderCheckSection(check: CheckData): string {
 
 export default function renderCheckbookHtml(checkbookData: CheckbookData): string {
   if (typeof window === 'undefined') {
-    throw new Error('لا يمكن إنشاء صفحة الطباعة خارج بيئة المتصفح');
+    throw new Error('Print page cannot be created outside browser environment');
   }
 
   const micrFontUrl = new URL('/font/micrenc.ttf', window.location.origin).toString();
@@ -172,7 +172,7 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
   );
   
   if (validChecks.length === 0) {
-    throw new Error('لا توجد شيكات صالحة للطباعة');
+    throw new Error('No valid checks to print');
   }
   
   const firstCheck = validChecks[0];
@@ -186,7 +186,7 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>طباعة دفتر الشيكات</title>
+  <title>Checkbook Print</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
