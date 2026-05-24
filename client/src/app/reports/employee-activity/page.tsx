@@ -33,7 +33,7 @@ interface InventoryTransactionActivity {
   quantity: number;
   serialFrom?: string;
   serialTo?: string;
-  userId: number;
+  userId?: number;
   user?: { username: string };
   notes?: string;
   createdAt: string;
