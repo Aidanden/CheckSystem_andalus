@@ -105,6 +105,14 @@ export const printBook = async (req: Request, res: Response) => {
         const checksPerBook = 50;
         const totalChecks = booksCount * checksPerBook;
 
+        // التحقق من المخزون قبل الإصدار
+        const availableQuantity = await InventoryService.getAvailableQuantity(StockType.CERTIFIED);
+        if (availableQuantity < totalChecks) {
+            return res.status(400).json({
+                error: `لا يوجد مخزون كافٍ من الصكوك المصدقة. المطلوب: ${totalChecks} ورقة، المتاح: ${availableQuantity} ورقة`,
+            });
+        }
+
         // الحصول على نطاق التسلسل
         const startSerial = customStartSerial && customStartSerial > 0
             ? parseInt(customStartSerial.toString())
@@ -130,6 +138,14 @@ export const printBook = async (req: Request, res: Response) => {
             return res.status(400).json({ error: errorMessage });
         }
 
+        // خصم المخزون قبل إنشاء السجل — إن فشل لا تتم الطباعة
+        await InventoryService.deductInventory(
+            StockType.CERTIFIED,
+            totalChecks,
+            user.userId,
+            `إصدار دفاتر صكوك مصدقة لفرع ${branch.branchName} (${range.firstSerial} - ${range.lastSerial})`
+        );
+
         const log = await CertifiedCheckModel.printBook({
             branchId,
             branchName: branch.branchName,
@@ -145,19 +161,6 @@ export const printBook = async (req: Request, res: Response) => {
             printedByName: user.username,
             notes,
         });
-
-        // خصم من المخزون
-        try {
-            await InventoryService.deductInventory(
-                StockType.CERTIFIED,
-                totalChecks,
-                user.userId,
-                `إصدار دفاتر صكوك مصدقة لفرع ${branch.branchName} (${range.firstSerial} - ${range.lastSerial})`
-            );
-        } catch (invError) {
-            console.error('Error deducting inventory:', invError);
-            // We continue even if inventory deduction fails, but we log it
-        }
 
         return res.json({
             success: true,
@@ -177,7 +180,8 @@ export const printBook = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Error printing certified check book:', error);
         const errorMessage = error.message || 'فشل في طباعة دفتر الصكوك المصدقة';
-        return res.status(500).json({ error: errorMessage });
+        const isInventoryError = errorMessage.includes('مخزون') || errorMessage.includes('Insufficient');
+        return res.status(isInventoryError ? 400 : 500).json({ error: errorMessage });
     }
 };
 
@@ -222,7 +226,23 @@ export const reprintBook = async (req: Request, res: Response) => {
 
         const reprintTotalChecks = reprintLastSerial - reprintFirstSerial + 1;
 
-        // Create a new log for the reprint
+        // خصم المخزون عند إعادة الطباعة بسبب تلف الورق فقط
+        if (reprintReason === 'damaged') {
+            const availableQuantity = await InventoryService.getAvailableQuantity(StockType.CERTIFIED);
+            if (availableQuantity < reprintTotalChecks) {
+                return res.status(400).json({
+                    error: `لا يوجد مخزون كافٍ من الصكوك المصدقة. المطلوب: ${reprintTotalChecks} ورقة، المتاح: ${availableQuantity} ورقة`,
+                });
+            }
+
+            await InventoryService.deductInventory(
+                StockType.CERTIFIED,
+                reprintTotalChecks,
+                user.userId,
+                `إعادة طباعة صكوك مصدقة تالفة لفرع ${originalLog.branchName} (${reprintFirstSerial} - ${reprintLastSerial})`
+            );
+        }
+
         const log = await CertifiedCheckModel.printBook({
             branchId: originalLog.branchId,
             branchName: originalLog.branchName,
@@ -232,25 +252,13 @@ export const reprintBook = async (req: Request, res: Response) => {
             lastSerial: reprintLastSerial,
             totalChecks: reprintTotalChecks,
             numberOfBooks: Math.ceil(reprintTotalChecks / 50),
-            customStartSerial: undefined, // لا نستخدم custom serial في إعادة الطباعة
+            customStartSerial: undefined,
             operationType: 'reprint',
             reprintReason: reprintReason as 'damaged' | 'not_printed',
             printedBy: user.userId,
             printedByName: user.username,
             notes: `إعادة طباعة للسجل رقم ${logId}`,
         });
-
-        // خصم من المخزون في حالة إعادة الطباعة (لأننا نستخدم أوراقاً جديدة)
-        try {
-            await InventoryService.deductInventory(
-                StockType.CERTIFIED,
-                reprintTotalChecks,
-                user.userId,
-                `إعادة طباعة صكوك مصدقة لفرع ${originalLog.branchName} (${reprintFirstSerial} - ${reprintLastSerial})`
-            );
-        } catch (invError) {
-            console.error('Error deducting inventory for reprint:', invError);
-        }
 
         return res.json({
             success: true,
@@ -268,9 +276,11 @@ export const reprintBook = async (req: Request, res: Response) => {
                 checksPerBook: 50,
             },
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error reprinting certified check book:', error);
-        return res.status(500).json({ error: 'فشل في إعادة طباعة دفتر الصكوك المصدقة' });
+        const errorMessage = error?.message || 'فشل في إعادة طباعة دفتر الصكوك المصدقة';
+        const isInventoryError = errorMessage.includes('مخزون') || errorMessage.includes('Insufficient');
+        return res.status(isInventoryError ? 400 : 500).json({ error: errorMessage });
     }
 };
 

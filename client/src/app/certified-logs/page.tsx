@@ -21,8 +21,10 @@ import {
 } from 'lucide-react';
 import { formatDateMedium, formatNumber } from '@/utils/locale';
 import { User } from '@/types';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 export default function CertifiedLogsPage() {
+  const { t } = useTranslation();
     const { user } = useAppSelector((state) => state.auth);
     const [logs, setLogs] = useState<CertifiedCheckLog[]>([]);
     const [branches, setBranches] = useState<CertifiedBranch[]>([]);
@@ -280,7 +282,7 @@ export default function CertifiedLogsPage() {
                             <Layers className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-800">تقارير دفاتر الشيكات المصدقة</h1>
+                            <h1 className="text-2xl font-bold text-gray-800">{t('certifiedLogs.title')}</h1>
                             <p className="text-gray-600 font-medium">سجلات طباعة وإعادة طباعة دفاتر الشيكات المصدقة للفروع</p>
                         </div>
                     </div>

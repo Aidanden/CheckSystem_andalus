@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Settings as SettingsIcon, Save, RotateCcw, Printer, RefreshCw } from 'lucide-react';
 import { systemSettingsService } from '@/lib/api';
 import renderCheckbookHtml from '@/lib/utils/printRenderer';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 interface PrintPosition {
   x: number;
@@ -63,6 +64,7 @@ const DEFAULT_BANK_STAFF: PrintSettings = {
 };
 
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<1 | 2 | 3>(1);
   const [individualSettings, setIndividualSettings] = useState<PrintSettings>(DEFAULT_INDIVIDUAL);
   const [corporateSettings, setCorporateSettings] = useState<PrintSettings>(DEFAULT_CORPORATE);
@@ -90,7 +92,7 @@ export default function SettingsPage() {
   const handleSoapEndpointSave = async () => {
     const value = soapApiEndpoint.trim();
     if (!value) {
-      setSoapApiMessage({ type: 'error', text: 'Please enter a valid SOAP URL.' });
+      setSoapApiMessage({ type: 'error', text: t('settings.enterValidSoapUrl') });
       return;
     }
 
@@ -99,10 +101,10 @@ export default function SettingsPage() {
     try {
       const { endpoint } = await systemSettingsService.updateSoapEndpoint(value);
       setSoapApiEndpoint(endpoint);
-      setSoapApiMessage({ type: 'success', text: 'SOAP URL saved successfully.' });
+      setSoapApiMessage({ type: 'success', text: t('settings.soapUrlSaved') });
     } catch (err: any) {
       const apiError = err?.response?.data?.error;
-      setSoapApiMessage({ type: 'error', text: apiError || 'Failed to save SOAP URL.' });
+      setSoapApiMessage({ type: 'error', text: apiError || t('settings.failedSaveSoapUrl') });
     } finally {
       setSoapApiSaving(false);
     }
@@ -111,7 +113,7 @@ export default function SettingsPage() {
   const handleSoapIAEndpointSave = async () => {
     const value = soapIAEndpoint.trim();
     if (!value) {
-      setSoapIAApiMessage({ type: 'error', text: 'Please enter a valid SOAP IA URL.' });
+      setSoapIAApiMessage({ type: 'error', text: t('settings.enterValidSoapIaUrl') });
       return;
     }
 
@@ -120,10 +122,10 @@ export default function SettingsPage() {
     try {
       const { endpoint } = await systemSettingsService.updateSoapIAEndpoint(value);
       setSoapIAEndpoint(endpoint);
-      setSoapIAApiMessage({ type: 'success', text: 'SOAP IA URL saved successfully.' });
+      setSoapIAApiMessage({ type: 'success', text: t('settings.soapIaUrlSaved') });
     } catch (err: any) {
       const apiError = err?.response?.data?.error;
-      setSoapIAApiMessage({ type: 'error', text: apiError || 'Failed to save SOAP IA URL.' });
+      setSoapIAApiMessage({ type: 'error', text: apiError || t('settings.failedSaveSoapIaUrl') });
     } finally {
       setSoapIAApiSaving(false);
     }
@@ -149,7 +151,7 @@ export default function SettingsPage() {
       setSoapApiEndpoint(endpoint);
     } catch (err) {
       console.error('فشل تحميل رابط SOAP:', err);
-      setSoapApiMessage({ type: 'error', text: 'Could not load current SOAP URL; default will be used.' });
+      setSoapApiMessage({ type: 'error', text: t('settings.couldNotLoadSoapUrl') });
     } finally {
       setSoapApiLoading(false);
     }
@@ -163,7 +165,7 @@ export default function SettingsPage() {
       setSoapIAEndpoint(endpoint);
     } catch (err) {
       console.error('فشل تحميل رابط SOAP IA:', err);
-      setSoapIAApiMessage({ type: 'error', text: 'Could not load current SOAP IA URL; default will be used.' });
+      setSoapIAApiMessage({ type: 'error', text: t('settings.couldNotLoadSoapIaUrl') });
     } finally {
       setSoapIAApiLoading(false);
     }
@@ -235,7 +237,7 @@ export default function SettingsPage() {
       const token = localStorage.getItem('token');
 
       if (!token) {
-        setError('Please sign in');
+        setError(t('settings.pleaseSignIn'));
         return;
       }
 
@@ -251,12 +253,12 @@ export default function SettingsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess('Settings saved successfully!');
+        setSuccess(t('settings.settingsSaved'));
       } else {
-        setError(data.error || 'Failed to save settings');
+        setError(data.error || t('settings.failedSaveSettings'));
       }
     } catch (err) {
-      setError('Failed to save settings');
+      setError(t('settings.failedSaveSettings'));
       console.error('Error saving settings:', err);
     } finally {
       setLoading(false);
@@ -264,14 +266,14 @@ export default function SettingsPage() {
   };
 
   const handleReset = () => {
-    if (confirm('Are you sure you want to reset settings to default values?')) {
+    if (confirm(t('settings.resetConfirm'))) {
       const defaults = activeTab === 1
         ? DEFAULT_INDIVIDUAL
         : activeTab === 2
           ? DEFAULT_CORPORATE
           : DEFAULT_BANK_STAFF;
       setCurrentSettings(() => defaults);
-      setSuccess('Settings have been reset');
+      setSuccess(t('settings.settingsReset'));
     }
   };
 
@@ -389,7 +391,7 @@ export default function SettingsPage() {
 
       const printWindow = window.open('', '_blank');
       if (!printWindow) {
-        setError('Failed to open print window. Please allow popups.');
+        setError(t('settings.failedOpenPrintWindow'));
         return;
       }
 
@@ -397,7 +399,7 @@ export default function SettingsPage() {
       printWindow.document.close();
     } catch (err) {
       console.error('Error in test print:', err);
-      setError('Failed to create print preview');
+      setError(t('settings.failedCreatePreview'));
     }
   };
 
@@ -417,15 +419,15 @@ export default function SettingsPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <SettingsIcon className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-800">Print Settings</h1>
+            <h1 className="text-2xl font-bold text-gray-800">{t('settings.title')}</h1>
           </div>
         </div>
 
         <div className="card space-y-4">
           <div className="flex flex-col gap-2">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">SOAP API URL</h2>
-              <p className="text-sm text-gray-600">You can change the SOAP service URL to test different environments without redeploying.</p>
+              <h2 className="text-lg font-semibold text-gray-800">{t('settings.soapApiUrl')}</h2>
+              <p className="text-sm text-gray-600">{t('settings.soapApiUrlDesc')}</p>
             </div>
             {soapApiMessage && (
               <div className={`${soapApiMessage.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'} border px-3 py-2 rounded`}>
@@ -435,7 +437,7 @@ export default function SettingsPage() {
           </div>
 
           <label className="block text-sm text-gray-600" htmlFor="soap-endpoint-input">
-            Current SOAP URL
+            {t('settings.currentSoapUrl')}
           </label>
           <input
             id="soap-endpoint-input"
@@ -457,12 +459,12 @@ export default function SettingsPage() {
               {soapApiSaving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Saving...
+                  {t('common.saving')}
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  Save URL
+                  {t('settings.saveUrl')}
                 </>
               )}
             </button>
@@ -474,19 +476,19 @@ export default function SettingsPage() {
               className="btn bg-gray-100 text-gray-800 hover:bg-gray-200 flex items-center gap-2 disabled:opacity-50"
             >
               <RefreshCw className={soapApiLoading ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />
-              Reload URL
+              {t('settings.reloadUrl')}
             </button>
 
             <div className="text-xs text-gray-500 flex items-center">
-              {soapApiLoading ? 'Loading URL from server...' : 'Last value loaded from server'}
+              {soapApiLoading ? t('settings.loadingUrl') : t('settings.lastValueLoaded')}
             </div>
           </div>
 
           <div className="border-t pt-4 mt-4">
             <div className="flex flex-col gap-2">
               <div>
-                <h2 className="text-lg font-semibold text-gray-800">SOAP API URL (Names)</h2>
-                <p className="text-sm text-gray-600">SOAP service URL for fetching account holder names (FCUBSIAService).</p>
+                <h2 className="text-lg font-semibold text-gray-800">{t('settings.soapApiUrlNames')}</h2>
+                <p className="text-sm text-gray-600">{t('settings.soapApiUrlNamesDesc')}</p>
               </div>
               {soapIAApiMessage && (
                 <div className={`${soapIAApiMessage.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'} border px-3 py-2 rounded`}>
@@ -496,7 +498,7 @@ export default function SettingsPage() {
             </div>
 
             <label className="block text-sm text-gray-600 mt-3" htmlFor="soap-ia-endpoint-input">
-              Current SOAP IA URL
+              {t('settings.currentSoapIaUrl')}
             </label>
             <input
               id="soap-ia-endpoint-input"
@@ -518,12 +520,12 @@ export default function SettingsPage() {
                 {soapIAApiSaving ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Saving...
+                    {t('common.saving')}
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    Save URL
+                    {t('settings.saveUrl')}
                   </>
                 )}
               </button>
@@ -535,11 +537,11 @@ export default function SettingsPage() {
                 className="btn bg-gray-100 text-gray-800 hover:bg-gray-200 flex items-center gap-2 disabled:opacity-50"
               >
                 <RefreshCw className={soapIAApiLoading ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />
-Reload URL
-            </button>
+                {t('settings.reloadUrl')}
+              </button>
 
               <div className="text-xs text-gray-500 flex items-center">
-                {soapIAApiLoading ? 'Loading URL from server...' : 'Last value loaded from server'}
+                {soapIAApiLoading ? t('settings.loadingUrl') : t('settings.lastValueLoaded')}
               </div>
             </div>
           </div>
@@ -555,7 +557,7 @@ Reload URL
                 : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
-              Individual (25 sheets)
+              {t('settings.tabIndividual')}
             </button>
             <button
               onClick={() => setActiveTab(2)}
@@ -564,7 +566,7 @@ Reload URL
                 : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
-              Corporate (50 sheets)
+              {t('settings.tabCorporate')}
             </button>
             <button
               onClick={() => setActiveTab(3)}
@@ -573,7 +575,7 @@ Reload URL
                 : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
-              Employee (10 sheets)
+              {t('settings.tabEmployee')}
             </button>
           </div>
         </div>
@@ -595,17 +597,17 @@ Reload URL
           {/* Settings Form */}
           <div className="card space-y-6">
             <h2 className="text-lg font-semibold text-gray-800">
-              Check Specifications
+              {t('settings.checkSpecifications')}
             </h2>
 
             {/* Check Dimensions */}
             <div className="space-y-4">
-              <h3 className="font-medium text-gray-700">Dimensions (mm)</h3>
+              <h3 className="font-medium text-gray-700">{t('settings.dimensionsMm')}</h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">
-                    Width
+                    {t('common.width')}
                   </label>
                   <input
                     type="number"
@@ -618,7 +620,7 @@ Reload URL
 
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">
-                    Height
+                    {t('common.height')}
                   </label>
                   <input
                     type="number"
@@ -633,11 +635,11 @@ Reload URL
 
             {/* Branch Name Position */}
             <div className="space-y-4 border-t pt-4">
-              <h3 className="font-medium text-gray-700">Branch Name</h3>
+              <h3 className="font-medium text-gray-700">{t('settings.branchName')}</h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">X (from left)</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.xFromLeft')}</label>
                   <input
                     type="number"
                     value={currentSettings.branchName.x}
@@ -648,7 +650,7 @@ Reload URL
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Y (from top)</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.yFromTop')}</label>
                   <input
                     type="number"
                     value={currentSettings.branchName.y}
@@ -659,7 +661,7 @@ Reload URL
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Font size</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.fontSize')}</label>
                   <input
                     type="number"
                     value={currentSettings.branchName.fontSize}
@@ -669,15 +671,15 @@ Reload URL
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Alignment</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.alignment')}</label>
                   <select
                     value={currentSettings.branchName.align}
                     onChange={(e) => updatePosition('branchName', 'align', e.target.value)}
                     className="input w-full"
                   >
-                    <option value="left">Left</option>
-                    <option value="center">Center</option>
-                    <option value="right">Right</option>
+                    <option value="left">{t('common.left')}</option>
+                    <option value="center">{t('common.center')}</option>
+                    <option value="right">{t('common.right')}</option>
                   </select>
                 </div>
               </div>
@@ -686,11 +688,11 @@ Reload URL
             {/* Account Number Position */}
             {(activeTab as number) !== 4 && currentSettings.accountNumber && (
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-medium text-gray-700">Account Number</h3>
+                <h3 className="font-medium text-gray-700">{t('common.accountNumber')}</h3>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">X (from left)</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.xFromLeft')}</label>
                     <input
                       type="number"
                       value={currentSettings.accountNumber.x}
@@ -701,7 +703,7 @@ Reload URL
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Y (from top)</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.yFromTop')}</label>
                     <input
                       type="number"
                       value={currentSettings.accountNumber.y}
@@ -712,7 +714,7 @@ Reload URL
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Font size</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.fontSize')}</label>
                     <input
                       type="number"
                       value={currentSettings.accountNumber.fontSize}
@@ -722,15 +724,15 @@ Reload URL
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Alignment</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.alignment')}</label>
                     <select
                       value={currentSettings.accountNumber.align}
                       onChange={(e) => updatePosition('accountNumber', 'align', e.target.value)}
                       className="input w-full"
                     >
-                      <option value="left">Left</option>
-                      <option value="center">Center</option>
-                      <option value="right">Right</option>
+                      <option value="left">{t('common.left')}</option>
+                      <option value="center">{t('common.center')}</option>
+                      <option value="right">{t('common.right')}</option>
                     </select>
                   </div>
                 </div>
@@ -738,11 +740,11 @@ Reload URL
             )}
             {/* Serial Number Position */}
             <div className="space-y-4 border-t pt-4">
-              <h3 className="font-medium text-gray-700">Serial Number</h3>
+              <h3 className="font-medium text-gray-700">{t('settings.serialNumber')}</h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">X</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.x')}</label>
                   <input
                     type="number"
                     value={currentSettings.serialNumber.x}
@@ -753,7 +755,7 @@ Reload URL
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Y</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.y')}</label>
                   <input
                     type="number"
                     value={currentSettings.serialNumber.y}
@@ -764,7 +766,7 @@ Reload URL
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Font size</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.fontSize')}</label>
                   <input
                     type="number"
                     value={currentSettings.serialNumber.fontSize}
@@ -774,15 +776,15 @@ Reload URL
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Alignment</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.alignment')}</label>
                   <select
                     value={currentSettings.serialNumber.align}
                     onChange={(e) => updatePosition('serialNumber', 'align', e.target.value)}
                     className="input w-full"
                   >
-                    <option value="left">Left</option>
-                    <option value="center">Center</option>
-                    <option value="right">Right</option>
+                    <option value="left">{t('common.left')}</option>
+                    <option value="center">{t('common.center')}</option>
+                    <option value="right">{t('common.right')}</option>
                   </select>
                 </div>
               </div>
@@ -790,11 +792,11 @@ Reload URL
 
             {/* Check Sequence Position */}
             <div className="space-y-4 border-t pt-4">
-              <h3 className="font-medium text-gray-700">Second Serial Number</h3>
+              <h3 className="font-medium text-gray-700">{t('settings.secondSerialNumber')}</h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">X (from left)</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.xFromLeft')}</label>
                   <input
                     type="number"
                     value={currentSettings.checkSequence.x}
@@ -805,7 +807,7 @@ Reload URL
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Y (from top)</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.yFromTop')}</label>
                   <input
                     type="number"
                     value={currentSettings.checkSequence.y}
@@ -816,7 +818,7 @@ Reload URL
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Font size</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.fontSize')}</label>
                   <input
                     type="number"
                     value={currentSettings.checkSequence.fontSize}
@@ -826,15 +828,15 @@ Reload URL
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Alignment</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.alignment')}</label>
                   <select
                     value={currentSettings.checkSequence.align}
                     onChange={(e) => updatePosition('checkSequence', 'align', e.target.value)}
                     className="input w-full"
                   >
-                    <option value="left">Left</option>
-                    <option value="center">Center</option>
-                    <option value="right">Right</option>
+                    <option value="left">{t('common.left')}</option>
+                    <option value="center">{t('common.center')}</option>
+                    <option value="right">{t('common.right')}</option>
                   </select>
                 </div>
               </div>
@@ -843,11 +845,11 @@ Reload URL
             {/* Account Holder Name Position */}
             {(activeTab as number) !== 4 && (
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-medium text-gray-700">Account Holder Name</h3>
+                <h3 className="font-medium text-gray-700">{t('settings.accountHolderName')}</h3>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">X</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.x')}</label>
                     <input
                       type="number"
                       value={currentSettings.accountHolderName.x}
@@ -858,7 +860,7 @@ Reload URL
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Y</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.y')}</label>
                     <input
                       type="number"
                       value={currentSettings.accountHolderName.y}
@@ -869,7 +871,7 @@ Reload URL
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Font size</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.fontSize')}</label>
                     <input
                       type="number"
                       value={currentSettings.accountHolderName.fontSize}
@@ -879,15 +881,15 @@ Reload URL
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Alignment</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.alignment')}</label>
                     <select
                       value={currentSettings.accountHolderName.align}
                       onChange={(e) => updatePosition('accountHolderName', 'align', e.target.value)}
                       className="input w-full"
                     >
-                      <option value="left">Left</option>
-                      <option value="center">Center</option>
-                      <option value="right">Right</option>
+                      <option value="left">{t('common.left')}</option>
+                      <option value="center">{t('common.center')}</option>
+                      <option value="right">{t('common.right')}</option>
                     </select>
                   </div>
                 </div>
@@ -897,21 +899,21 @@ Reload URL
             {/* MICR Line Position */}
             <div className="space-y-4 border-t pt-4">
               <div>
-                <h3 className="font-medium text-gray-700 mb-2">خط MICR</h3>
+                <h3 className="font-medium text-gray-700 mb-2">{t('settings.micrLine')}</h3>
                 <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
-                  <p className="font-medium mb-1">ترتيب البيانات (من اليمين لليسار - RTL):</p>
+                  <p className="font-medium mb-1">{t('settings.micrOrderTitle')}</p>
                   <p className="font-mono text-xs">
-                    [نوع الصك: 01 أفراد / 02 شركات] [Account Number 15 رقم] [الرقم التوجيهي] [رقم التسلسل 9 أرقام]
+                    {t('settings.micrOrderFormat')}
                   </p>
                   <p className="mt-1 font-mono text-xs text-blue-600">
-                    مثال: 01 100012345678901 1100000001 000000001
+                    {t('settings.micrOrderExample')}
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">X</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.x')}</label>
                   <input
                     type="number"
                     value={currentSettings.micrLine.x}
@@ -922,7 +924,7 @@ Reload URL
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Y</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.y')}</label>
                   <input
                     type="number"
                     value={currentSettings.micrLine.y}
@@ -933,7 +935,7 @@ Reload URL
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Font size</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.fontSize')}</label>
                   <input
                     type="number"
                     value={currentSettings.micrLine.fontSize}
@@ -943,15 +945,15 @@ Reload URL
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Alignment</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.alignment')}</label>
                   <select
                     value={currentSettings.micrLine.align}
                     onChange={(e) => updatePosition('micrLine', 'align', e.target.value)}
                     className="input w-full"
                   >
-                    <option value="left">Left</option>
-                    <option value="center">Center</option>
-                    <option value="right">Right</option>
+                    <option value="left">{t('common.left')}</option>
+                    <option value="center">{t('common.center')}</option>
+                    <option value="right">{t('common.right')}</option>
                   </select>
                 </div>
               </div>
@@ -966,7 +968,7 @@ Reload URL
                   className="flex-1 btn btn-primary flex items-center justify-center gap-2"
                 >
                   <Save className="w-5 h-5" />
-                  حفظ الإعدادات
+                  {t('settings.saveSettings')}
                 </button>
 
                 <button
@@ -974,7 +976,7 @@ Reload URL
                   className="btn bg-gray-200 hover:bg-gray-300 text-gray-800 flex items-center gap-2"
                 >
                   <RotateCcw className="w-5 h-5" />
-                  إعادة تعيين
+                  {t('settings.resetSettings')}
                 </button>
               </div>
 
@@ -983,7 +985,7 @@ Reload URL
                 className="w-full btn bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2"
               >
                 <Printer className="w-5 h-5" />
-                تجربة الطباعة
+                {t('settings.testPrint')}
               </button>
             </div>
           </div>
@@ -991,7 +993,7 @@ Reload URL
           {/* Preview */}
           <div className="card">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
-              معاينة الشيك
+              {t('settings.checkPreview')}
             </h2>
 
             <div
@@ -1012,7 +1014,7 @@ Reload URL
                   transform: currentSettings.branchName.align === 'center' ? 'translateX(-50%)' : 'none',
                 }}
               >
-                الفرع الرئيسي
+                {t('settings.previewMainBranch')}
               </div>
 
               {/* Account Number */}
@@ -1092,18 +1094,21 @@ Reload URL
 
             <div className="mt-4 space-y-3">
               <div className="text-sm text-gray-600 space-y-1">
-                <p>• المعاينة بمقياس 2:1 للوضوح</p>
-                <p>• المقاسات الفعلية: {currentSettings.checkWidth} × {currentSettings.checkHeight} ملم</p>
-                <p>• استخدم الإعدادات لضبط مواضع البيانات بدقة</p>
+                <p>{t('settings.previewScale')}</p>
+                <p>{t('settings.actualDimensions', {
+                  width: currentSettings.checkWidth,
+                  height: currentSettings.checkHeight,
+                })}</p>
+                <p>{t('settings.useSettingsHint')}</p>
               </div>
 
               <div className="bg-green-50 border border-green-200 rounded p-3 text-sm">
-                <p className="font-medium text-green-800 mb-1">📋 تكوين خط MICR (من اليمين لليسار):</p>
+                <p className="font-medium text-green-800 mb-1">{t('settings.micrConfigTitle')}</p>
                 <div className="font-mono text-xs text-green-700 space-y-1">
-                  <p className="text-right">• <span className="text-green-900 font-bold">01</span> (أفراد) أو <span className="text-green-900 font-bold">02</span> (شركات) - النوع (يمين)</p>
-                  <p className="text-right">• <span className="text-green-900 font-bold">100012345678901</span> (15 رقم) - Account Number</p>
-                  <p className="text-right">• <span className="text-green-900 font-bold">1100000001</span> - الرقم التوجيهي (رقم الفرع)</p>
-                  <p className="text-right">• <span className="text-green-900 font-bold">000000001</span> (9 أرقام) - التسلسل (يسار)</p>
+                  <p className="text-right">{t('settings.micrConfigType', { code: '01', code2: '02' })}</p>
+                  <p className="text-right">{t('settings.micrConfigAccount', { digits: '100012345678901' })}</p>
+                  <p className="text-right">{t('settings.micrConfigRouting', { digits: '1100000001' })}</p>
+                  <p className="text-right">{t('settings.micrConfigSerial', { digits: '000000001' })}</p>
                 </div>
               </div>
             </div>

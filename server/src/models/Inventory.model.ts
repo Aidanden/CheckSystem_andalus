@@ -19,7 +19,7 @@ export class InventoryModel {
       where: { stockType },
       select: { quantity: true },
     });
-    
+
     return inventory?.quantity || 0;
   }
 
@@ -32,17 +32,26 @@ export class InventoryModel {
     notes?: string
   ): Promise<void> {
     await prisma.$transaction(async (tx) => {
-      // Update inventory
-      await tx.inventory.updateMany({
+      const existing = await tx.inventory.findFirst({
         where: { stockType },
-        data: {
-          quantity: {
-            increment: quantity,
-          },
-        },
       });
 
-      // Record transaction
+      if (existing) {
+        await tx.inventory.update({
+          where: { id: existing.id },
+          data: {
+            quantity: { increment: quantity },
+          },
+        });
+      } else {
+        await tx.inventory.create({
+          data: {
+            stockType,
+            quantity,
+          },
+        });
+      }
+
       await tx.inventoryTransaction.create({
         data: {
           stockType,
@@ -62,46 +71,36 @@ export class InventoryModel {
     quantity: number,
     userId: number,
     notes?: string
-  ): Promise<boolean> {
-    try {
-      await prisma.$transaction(async (tx) => {
-        // Check available quantity
-        const inventory = await tx.inventory.findFirst({
-          where: { stockType },
-          select: { quantity: true },
-        });
-
-        const currentQuantity = inventory?.quantity || 0;
-        if (currentQuantity < quantity) {
-          throw new Error('Insufficient inventory');
-        }
-
-        // Update inventory
-        await tx.inventory.updateMany({
-          where: { stockType },
-          data: {
-            quantity: {
-              decrement: quantity,
-            },
-          },
-        });
-
-        // Record transaction
-        await tx.inventoryTransaction.create({
-          data: {
-            stockType,
-            transactionType: 'DEDUCT',
-            quantity,
-            userId,
-            notes,
-          },
-        });
+  ): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      const inventory = await tx.inventory.findFirst({
+        where: { stockType },
       });
 
-      return true;
-    } catch {
-      return false;
-    }
+      const currentQuantity = inventory?.quantity || 0;
+      if (!inventory || currentQuantity < quantity) {
+        throw new Error(
+          `لا يوجد مخزون كافٍ. المطلوب: ${quantity} ورقة، المتاح: ${currentQuantity} ورقة`
+        );
+      }
+
+      await tx.inventory.update({
+        where: { id: inventory.id },
+        data: {
+          quantity: { decrement: quantity },
+        },
+      });
+
+      await tx.inventoryTransaction.create({
+        data: {
+          stockType,
+          transactionType: 'DEDUCT',
+          quantity,
+          userId,
+          notes,
+        },
+      });
+    });
   }
 
   static async getTransactionHistory(

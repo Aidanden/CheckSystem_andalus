@@ -20,8 +20,10 @@ import {
 } from 'lucide-react';
 import { formatDateShort, formatDateMedium, formatNumber } from '@/utils/locale';
 import { RootState } from '@/store';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 export default function CertifiedReportsPage() {
+  const { t } = useTranslation();
     const user = useSelector((state: RootState) => state.auth.user);
     const [records, setRecords] = useState<CertifiedPrintRecord[]>([]);
     const [branches, setBranches] = useState<CertifiedBranch[]>([]);
@@ -235,7 +237,7 @@ export default function CertifiedReportsPage() {
                             <FileText className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-800">تقارير الصكوك المصدقة</h1>
+                            <h1 className="text-2xl font-bold text-gray-800">{t('certifiedReports.title')}</h1>
                             <p className="text-gray-600 font-medium">عرض وتحليل عمليات إصدار الصكوك المصدقة</p>
                         </div>
                     </div>
@@ -441,7 +443,7 @@ export default function CertifiedReportsPage() {
                     <div className="flex items-center justify-between mb-6 pb-4 border-b">
                         <div className="flex items-center gap-2">
                             <ClipboardList className="w-6 h-6 text-blue-600" />
-                            <h2 className="text-xl font-bold text-gray-800">سجل الشيكات الصادرة</h2>
+                            <h2 className="text-xl font-bold text-gray-800">{t('certifiedReports.issuedLog')}</h2>
                         </div>
                         <div className="text-sm font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
                             عدد النتائج: {total}

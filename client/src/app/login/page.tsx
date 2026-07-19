@@ -5,11 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { login, clearError } from '@/store/slices/authSlice';
 import Image from 'next/image';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 export default function LoginPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { isAuthenticated, loading, error } = useAppSelector((state) => state.auth);
+  const { t } = useTranslation();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -21,7 +24,6 @@ export default function LoginPage() {
   }, [isAuthenticated, router]);
 
   useEffect(() => {
-    // Clear error when component mounts
     return () => {
       dispatch(clearError());
     };
@@ -36,15 +38,18 @@ export default function LoginPage() {
 
     try {
       await dispatch(login({ username, password })).unwrap();
-    } catch (err) {
+    } catch {
       // Error is handled by Redux
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary-50 via-white to-primary-50">
-      <div className="w-full max-w-md">
-        {/* Header with Logo */}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary-50 via-white to-primary-50 relative">
+      <div className="absolute top-6 end-6">
+        <LanguageSwitcher />
+      </div>
+
+      <div className="w-full max-w-md px-4">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
             <div className="bg-white p-4 rounded-2xl shadow-lg">
@@ -58,26 +63,25 @@ export default function LoginPage() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            Andalus Bank
+            {t('login.bankName')}
           </h1>
           <p className="text-lg text-primary-600 font-semibold mb-1">
-            Check Printing System
+            {t('login.systemName')}
           </p>
           <div className="w-24 h-1 bg-gradient-to-r from-primary-500 to-secondary-400 mx-auto rounded-full"></div>
         </div>
 
-        {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-50 border-r-4 border-red-500 text-red-700 px-4 py-3 rounded-lg">
+              <div className="bg-red-50 border-s-4 border-red-500 text-red-700 px-4 py-3 rounded-lg">
                 <p className="text-sm font-medium">{error}</p>
               </div>
             )}
 
             <div>
               <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
-                Username
+                {t('login.username')}
               </label>
               <input
                 id="username"
@@ -85,7 +89,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                placeholder="Enter username"
+                placeholder={t('login.usernamePlaceholder')}
                 required
                 disabled={loading}
               />
@@ -93,7 +97,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-                Password
+                {t('login.password')}
               </label>
               <input
                 id="password"
@@ -101,7 +105,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                placeholder="Enter password"
+                placeholder={t('login.passwordPlaceholder')}
                 required
                 disabled={loading}
               />
@@ -113,31 +117,27 @@ export default function LoginPage() {
               className="w-full bg-gradient-to-r from-primary-600 to-primary-500 text-white py-3 rounded-xl font-semibold hover:from-primary-700 hover:to-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               {loading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <span className="flex items-center justify-center gap-3">
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Signing in...
+                  {t('login.signingIn')}
                 </span>
               ) : (
-                'Sign In'
+                t('login.signIn')
               )}
             </button>
-
-            {/* Demo credentials removed for production/testing */}
           </form>
         </div>
 
-        {/* Footer */}
         <div className="text-center mt-8 text-sm text-gray-600">
-          <p className="mb-1">All rights reserved © 2025</p>
+          <p className="mb-1">{t('login.rights')}</p>
           <p className="font-semibold text-primary-600">
-            Modern Technology Company - MTC
+            {t('login.company')}
           </p>
         </div>
       </div>
     </div>
   );
 }
-

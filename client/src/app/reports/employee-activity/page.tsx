@@ -5,9 +5,10 @@ import { useSelector } from 'react-redux';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { printLogService, inventoryService, userService } from '@/lib/api';
 import { User } from '@/types';
-import { FileText, Download, Filter, Calendar, X, Search, User as UserIcon, Printer, Package, RefreshCw } from 'lucide-react';
+import { FileText, Download, Filter, Calendar, X, User as UserIcon, Printer, Package, RefreshCw } from 'lucide-react';
 import { formatDateShort, formatDateMedium } from '@/utils/locale';
 import { RootState } from '@/store';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 interface PrintLogActivity {
   id: number;
@@ -40,6 +41,7 @@ interface InventoryTransactionActivity {
 }
 
 export default function EmployeeActivityReportPage() {
+  const { t, locale } = useTranslation();
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | undefined>(undefined);
@@ -141,55 +143,84 @@ export default function EmployeeActivityReportPage() {
     });
   };
 
+  const accountTypeLabel = (type: number) => {
+    if (type === 1) return t('dashboard.individual');
+    if (type === 2) return t('dashboard.corporate');
+    return t('common.employee');
+  };
+
   const exportToCSV = () => {
     if (!selectedUserId) return;
 
     const selectedUser = users.find(u => u.id === selectedUserId);
-    const userName = selectedUser?.username || 'User';
+    const userName = selectedUser?.username || t('employeeActivity.userFallback');
+    const timeLocale = locale === 'ar' ? 'ar-LY' : 'en-GB';
+
+    const col = {
+      type: t('employeeActivity.csvType'),
+      operation: t('employeeActivity.csvOperation'),
+      reprintReason: t('employeeActivity.csvReprintReason'),
+      accountNumber: t('employeeActivity.csvAccountNumber'),
+      branch: t('employeeActivity.csvBranch'),
+      fromCheque: t('employeeActivity.csvFromCheque'),
+      toCheque: t('employeeActivity.csvToCheque'),
+      chequeCount: t('employeeActivity.csvChequeCount'),
+      accountType: t('employeeActivity.csvAccountType'),
+      date: t('employeeActivity.csvDate'),
+      time: t('employeeActivity.csvTime'),
+      notes: t('employeeActivity.csvNotes'),
+    };
 
     // تجميع البيانات
-    const allData: any[] = [];
+    const allData: Record<string, string | number>[] = [];
 
     // إضافة سجلات الطباعة
     printLogs.forEach((log) => {
       allData.push({
-        Type: 'Print',
-        Operation: log.operationType === 'print' ? 'Print' : 'Reprint',
-        'Reprint Reason': log.reprintReason === 'damaged' ? 'Damaged sheet' : log.reprintReason === 'not_printed' ? 'Not printed' : '-',
-        'Account Number': log.accountNumber,
-        'Branch': log.branchName || `Branch ${log.accountBranch}`,
-        'From Cheque': log.firstChequeNumber,
-        'To Cheque': log.lastChequeNumber,
-        'Cheque Count': log.totalCheques,
-        'Account Type': log.accountType === 1 ? 'Individual' : log.accountType === 2 ? 'Corporate' : 'Employee',
-        'Date': formatDateShort(log.printDate),
-        'Time': new Date(log.printDate).toLocaleTimeString('en-GB'),
-        'Notes': log.notes || '-',
+        [col.type]: t('employeeActivity.typePrint'),
+        [col.operation]: log.operationType === 'print' ? t('printLogs.opPrint') : t('printLogs.opReprint'),
+        [col.reprintReason]:
+          log.reprintReason === 'damaged'
+            ? t('employeeActivity.reasonDamaged')
+            : log.reprintReason === 'not_printed'
+              ? t('employeeActivity.reasonNotPrinted')
+              : '-',
+        [col.accountNumber]: log.accountNumber,
+        [col.branch]: log.branchName || t('employeeActivity.branchFallback', { code: log.accountBranch }),
+        [col.fromCheque]: log.firstChequeNumber,
+        [col.toCheque]: log.lastChequeNumber,
+        [col.chequeCount]: log.totalCheques,
+        [col.accountType]: accountTypeLabel(log.accountType),
+        [col.date]: formatDateShort(log.printDate),
+        [col.time]: new Date(log.printDate).toLocaleTimeString(timeLocale),
+        [col.notes]: log.notes || '-',
       });
     });
 
     // إضافة معاملات المخزون
     inventoryTransactions.forEach((transaction) => {
       allData.push({
-        Type: 'Inventory',
-        Operation: transaction.transactionType === 'ADD' ? 'Add' : 'Deduct',
-        'Reprint Reason': '-',
-        'Account Number': '-',
-        'Branch': '-',
-        'From Cheque': transaction.serialFrom || '-',
-        'To Cheque': transaction.serialTo || '-',
-        'Cheque Count': transaction.quantity,
-        'Account Type': transaction.stockType === 1 ? 'Individual' : 'Corporate',
-        'Date': formatDateShort(transaction.createdAt),
-        'Time': new Date(transaction.createdAt).toLocaleTimeString('en-GB'),
-        'Notes': transaction.notes || '-',
+        [col.type]: t('employeeActivity.typeInventory'),
+        [col.operation]:
+          transaction.transactionType === 'ADD' ? t('common.add') : t('employeeActivity.deduct'),
+        [col.reprintReason]: '-',
+        [col.accountNumber]: '-',
+        [col.branch]: '-',
+        [col.fromCheque]: transaction.serialFrom || '-',
+        [col.toCheque]: transaction.serialTo || '-',
+        [col.chequeCount]: transaction.quantity,
+        [col.accountType]:
+          transaction.stockType === 1 ? t('dashboard.individual') : t('dashboard.corporate'),
+        [col.date]: formatDateShort(transaction.createdAt),
+        [col.time]: new Date(transaction.createdAt).toLocaleTimeString(timeLocale),
+        [col.notes]: transaction.notes || '-',
       });
     });
 
     // ترتيب حسب التاريخ
     allData.sort((a, b) => {
-      const dateA = new Date(a.Date + ' ' + a.Time).getTime();
-      const dateB = new Date(b.Date + ' ' + b.Time).getTime();
+      const dateA = new Date(`${a[col.date]} ${a[col.time]}`).getTime();
+      const dateB = new Date(`${b[col.date]} ${b[col.time]}`).getTime();
       return dateB - dateA;
     });
 
@@ -218,8 +249,8 @@ export default function EmployeeActivityReportPage() {
     totalSheetsPrinted: printLogs.reduce((sum, log) => sum + log.totalCheques, 0),
     totalInventoryAdditions: inventoryTransactions.filter(t => t.transactionType === 'ADD').length,
     totalInventoryDeductions: inventoryTransactions.filter(t => t.transactionType === 'DEDUCT').length,
-    totalInventoryQuantity: inventoryTransactions.reduce((sum, t) => 
-      sum + (t.transactionType === 'ADD' ? t.quantity : -t.quantity), 0
+    totalInventoryQuantity: inventoryTransactions.reduce((sum, tx) => 
+      sum + (tx.transactionType === 'ADD' ? tx.quantity : -tx.quantity), 0
     ),
   };
 
@@ -229,8 +260,8 @@ export default function EmployeeActivityReportPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Employee Activity Report</h1>
-            <p className="text-sm text-gray-600 mt-1">Detailed view of all user activities in the system</p>
+            <h1 className="text-2xl font-bold text-gray-800">{t('reports.employeeActivity')}</h1>
+            <p className="text-sm text-gray-600 mt-1">{t('employeeActivity.subtitle')}</p>
           </div>
           <div className="flex gap-2">
             <button
@@ -238,7 +269,7 @@ export default function EmployeeActivityReportPage() {
               className={`btn ${showFilters ? 'btn-secondary' : 'btn-outline'} flex items-center gap-2`}
             >
               <Filter className="w-5 h-5" />
-              Filters
+              {t('common.filters')}
               {activeFiltersCount > 0 && (
                 <span className="bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {activeFiltersCount}
@@ -252,7 +283,7 @@ export default function EmployeeActivityReportPage() {
                 disabled={loading}
               >
                 <Download className="w-5 h-5" />
-                Export CSV
+                {t('employeeActivity.exportCsv')}
               </button>
             )}
           </div>
@@ -261,7 +292,7 @@ export default function EmployeeActivityReportPage() {
         {/* User Selection */}
         <div className="card">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select Employee
+            {t('employeeActivity.selectEmployee')}
           </label>
           <select
             value={selectedUserId || ''}
@@ -269,16 +300,16 @@ export default function EmployeeActivityReportPage() {
             className="input w-full"
             disabled={!currentUser?.isAdmin}
           >
-            <option value="">-- Select Employee --</option>
+            <option value="">{t('employeeActivity.selectEmployeePlaceholder')}</option>
             {users.map((user) => (
               <option key={user.id} value={user.id}>
-                {user.username} {user.isAdmin ? '(Admin)' : ''}
+                {user.username} {user.isAdmin ? t('employeeActivity.adminSuffix') : ''}
               </option>
             ))}
           </select>
           {!currentUser?.isAdmin && (
             <p className="text-xs text-gray-500 mt-1">
-              You can only view your own report
+              {t('employeeActivity.viewOwnOnly')}
             </p>
           )}
         </div>
@@ -287,14 +318,14 @@ export default function EmployeeActivityReportPage() {
         {showFilters && (
           <div className="card">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Filter Options</h3>
+              <h3 className="text-lg font-semibold text-gray-800">{t('employeeActivity.filterOptions')}</h3>
               {activeFiltersCount > 0 && (
                 <button
                   onClick={clearFilters}
                   className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
                 >
                   <X className="w-4 h-4" />
-                  Clear filters
+                  {t('common.clearFilters')}
                 </button>
               )}
             </div>
@@ -303,7 +334,7 @@ export default function EmployeeActivityReportPage() {
               {/* Date From Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  From date
+                  {t('common.fromDate')}
                 </label>
                 <div className="relative">
                   <input
@@ -319,7 +350,7 @@ export default function EmployeeActivityReportPage() {
               {/* Date To Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  To date
+                  {t('common.toDate')}
                 </label>
                 <div className="relative">
                   <input
@@ -335,33 +366,33 @@ export default function EmployeeActivityReportPage() {
               {/* Operation Type Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Operation type
+                  {t('employeeActivity.operationType')}
                 </label>
                 <select
                   value={filters.operationType}
                   onChange={(e) => handleFilterChange('operationType', e.target.value)}
                   className="input w-full"
                 >
-                  <option value="">All</option>
-                  <option value="print">Print</option>
-                  <option value="reprint">Reprint</option>
+                  <option value="">{t('common.all')}</option>
+                  <option value="print">{t('printLogs.opPrint')}</option>
+                  <option value="reprint">{t('printLogs.opReprint')}</option>
                 </select>
               </div>
 
               {/* Limit Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Record count
+                  {t('employeeActivity.recordCount')}
                 </label>
                 <select
                   value={filters.limit}
                   onChange={(e) => handleFilterChange('limit', Number(e.target.value))}
                   className="input w-full"
                 >
-                  <option value={50}>Last 50 records</option>
-                  <option value={100}>Last 100 records</option>
-                  <option value={200}>Last 200 records</option>
-                  <option value={500}>Last 500 records</option>
+                  <option value={50}>{t('employeeActivity.lastNRecords', { count: 50 })}</option>
+                  <option value={100}>{t('employeeActivity.lastNRecords', { count: 100 })}</option>
+                  <option value={200}>{t('employeeActivity.lastNRecords', { count: 200 })}</option>
+                  <option value={500}>{t('employeeActivity.lastNRecords', { count: 500 })}</option>
                 </select>
               </div>
             </div>
@@ -371,8 +402,8 @@ export default function EmployeeActivityReportPage() {
         {!selectedUserId ? (
           <div className="card text-center py-12">
             <UserIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Select an employee to view their report</h3>
-            <p className="text-gray-600">Please select an employee from the list above to view their activity report</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('employeeActivity.selectToView')}</h3>
+            <p className="text-gray-600">{t('employeeActivity.selectToViewHint')}</p>
           </div>
         ) : loading ? (
           <div className="flex items-center justify-center h-96">
@@ -385,7 +416,7 @@ export default function EmployeeActivityReportPage() {
               <div className="card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Print operations</p>
+                    <p className="text-sm text-gray-600">{t('employeeActivity.printOperations')}</p>
                     <p className="text-3xl font-bold text-blue-600 mt-2">{stats.totalPrintOperations}</p>
                   </div>
                   <Printer className="w-10 h-10 text-blue-600 opacity-20" />
@@ -395,7 +426,7 @@ export default function EmployeeActivityReportPage() {
               <div className="card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Reprint operations</p>
+                    <p className="text-sm text-gray-600">{t('employeeActivity.reprintOperations')}</p>
                     <p className="text-3xl font-bold text-orange-600 mt-2">{stats.totalReprintOperations}</p>
                   </div>
                   <RefreshCw className="w-10 h-10 text-orange-600 opacity-20" />
@@ -405,7 +436,7 @@ export default function EmployeeActivityReportPage() {
               <div className="card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Total sheets printed</p>
+                    <p className="text-sm text-gray-600">{t('employeeActivity.totalSheetsPrinted')}</p>
                     <p className="text-3xl font-bold text-green-600 mt-2">{stats.totalSheetsPrinted}</p>
                   </div>
                   <FileText className="w-10 h-10 text-green-600 opacity-20" />
@@ -415,7 +446,7 @@ export default function EmployeeActivityReportPage() {
               <div className="card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Stock addition operations</p>
+                    <p className="text-sm text-gray-600">{t('employeeActivity.stockAdditions')}</p>
                     <p className="text-3xl font-bold text-purple-600 mt-2">{stats.totalInventoryAdditions}</p>
                   </div>
                   <Package className="w-10 h-10 text-purple-600 opacity-20" />
@@ -425,7 +456,7 @@ export default function EmployeeActivityReportPage() {
               <div className="card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Stock deduction operations</p>
+                    <p className="text-sm text-gray-600">{t('employeeActivity.stockDeductions')}</p>
                     <p className="text-3xl font-bold text-red-600 mt-2">{stats.totalInventoryDeductions}</p>
                   </div>
                   <Package className="w-10 h-10 text-red-600 opacity-20" />
@@ -435,7 +466,7 @@ export default function EmployeeActivityReportPage() {
               <div className="card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Net stock</p>
+                    <p className="text-sm text-gray-600">{t('employeeActivity.netStock')}</p>
                     <p className={`text-3xl font-bold mt-2 ${stats.totalInventoryQuantity >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {stats.totalInventoryQuantity >= 0 ? '+' : ''}{stats.totalInventoryQuantity}
                     </p>
@@ -449,7 +480,7 @@ export default function EmployeeActivityReportPage() {
             <div className="card">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-800">
-                  Print and reprint logs ({totalPrintLogs})
+                  {t('employeeActivity.printReprintLogs', { count: totalPrintLogs })}
                 </h2>
               </div>
 
@@ -458,14 +489,14 @@ export default function EmployeeActivityReportPage() {
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">#</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">Operation Type</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">Account Number</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">Branch</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">From - To</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">Cheque Count</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">Account Type</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">Date & Time</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">Notes</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">{t('printLogs.operationType')}</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">{t('common.accountNumber')}</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">{t('common.branch')}</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">{t('employeeActivity.fromTo')}</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">{t('employeeActivity.chequeCount')}</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">{t('reports.accountType')}</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">{t('employeeActivity.dateTime')}</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">{t('common.notes')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -473,7 +504,7 @@ export default function EmployeeActivityReportPage() {
                       <tr>
                         <td colSpan={9} className="py-8 text-center text-gray-500">
                           <FileText className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                          <p>No print logs</p>
+                          <p>{t('employeeActivity.noPrintLogs')}</p>
                         </td>
                       </tr>
                     ) : (
@@ -486,20 +517,20 @@ export default function EmployeeActivityReportPage() {
                                 ? 'bg-green-100 text-green-700'
                                 : 'bg-blue-100 text-blue-700'
                             }`}>
-                              {log.operationType === 'print' ? 'Print' : 'Reprint'}
+                              {log.operationType === 'print' ? t('printLogs.opPrint') : t('printLogs.opReprint')}
                               {log.reprintReason && (
-                                <span className="mr-1">({log.reprintReason === 'damaged' ? 'Damaged' : 'Not printed'})</span>
+                                <span className="mr-1">({log.reprintReason === 'damaged' ? t('employeeActivity.damaged') : t('employeeActivity.notPrinted')})</span>
                               )}
                             </span>
                           </td>
                           <td className="py-3 px-4 text-sm font-mono">{log.accountNumber}</td>
-                          <td className="py-3 px-4 text-sm">{log.branchName || `Branch ${log.accountBranch}`}</td>
+                          <td className="py-3 px-4 text-sm">{log.branchName || t('employeeActivity.branchFallback', { code: log.accountBranch })}</td>
                           <td className="py-3 px-4 text-sm font-mono">
                             {log.firstChequeNumber} - {log.lastChequeNumber}
                           </td>
                           <td className="py-3 px-4 text-sm font-semibold">{log.totalCheques}</td>
                           <td className="py-3 px-4 text-sm">
-                            {log.accountType === 1 ? 'Individual' : log.accountType === 2 ? 'Corporate' : 'Employee'}
+                            {accountTypeLabel(log.accountType)}
                           </td>
                           <td className="py-3 px-4 text-sm">{formatDateMedium(log.printDate)}</td>
                           <td className="py-3 px-4 text-sm text-gray-500">{log.notes || '-'}</td>
@@ -515,7 +546,7 @@ export default function EmployeeActivityReportPage() {
             <div className="card">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-800">
-                  Inventory Transactions ({totalInventoryTransactions})
+                  {t('employeeActivity.inventoryTransactions', { count: totalInventoryTransactions })}
                 </h2>
               </div>
 
@@ -524,12 +555,12 @@ export default function EmployeeActivityReportPage() {
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">#</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">Operation Type</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">Stock Type</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">Quantity</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">From - To</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">Date & Time</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">Notes</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">{t('printLogs.operationType')}</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">{t('employeeActivity.stockType')}</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">{t('inventory.quantity')}</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">{t('employeeActivity.fromTo')}</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">{t('employeeActivity.dateTime')}</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">{t('common.notes')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -537,7 +568,7 @@ export default function EmployeeActivityReportPage() {
                       <tr>
                         <td colSpan={7} className="py-8 text-center text-gray-500">
                           <Package className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                          <p>No inventory transactions</p>
+                          <p>{t('employeeActivity.noInventoryTx')}</p>
                         </td>
                       </tr>
                     ) : (
@@ -550,11 +581,11 @@ export default function EmployeeActivityReportPage() {
                                 ? 'bg-green-100 text-green-700'
                                 : 'bg-red-100 text-red-700'
                             }`}>
-                              {transaction.transactionType === 'ADD' ? 'Add' : 'Deduct'}
+                              {transaction.transactionType === 'ADD' ? t('common.add') : t('employeeActivity.deduct')}
                             </span>
                           </td>
                           <td className="py-3 px-4 text-sm">
-                            {transaction.stockType === 1 ? 'Individual' : 'Corporate'}
+                            {transaction.stockType === 1 ? t('dashboard.individual') : t('dashboard.corporate')}
                           </td>
                           <td className="py-3 px-4 text-sm font-semibold">
                             {transaction.transactionType === 'ADD' ? '+' : '-'}{transaction.quantity}

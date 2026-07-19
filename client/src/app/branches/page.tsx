@@ -7,9 +7,10 @@ import { Branch, CreateBranchRequest } from '@/types';
 import { useAppSelector } from '@/store/hooks';
 import { Building2, Plus, Edit2, Trash2, Lock } from 'lucide-react';
 import { SECURITY_CONFIG } from '@/config/security.config';
-import Image from 'next/image';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 export default function BranchesPage() {
+  const { t } = useTranslation();
   const { user: currentUser } = useAppSelector((state) => state.auth);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +33,7 @@ export default function BranchesPage() {
     if (!currentUser) return;
 
     if (!currentUser.isAdmin) {
-      alert('You do not have permission to access this page');
+      alert(t('common.accessDenied'));
       window.location.href = '/dashboard';
       return;
     }
@@ -49,7 +50,7 @@ export default function BranchesPage() {
       setPasswordError('');
       setPassword('');
     } else {
-      setPasswordError('Incorrect password');
+      setPasswordError(t('branches.incorrectPassword'));
       setPassword('');
     }
   };
@@ -87,7 +88,7 @@ export default function BranchesPage() {
       });
       loadBranches();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to save branch');
+      alert(error.response?.data?.error || t('branches.saveFailed'));
     }
   };
 
@@ -104,18 +105,16 @@ export default function BranchesPage() {
   };
 
   const handleDelete = async (branchId: number) => {
-    if (!confirm('Are you sure you want to delete this branch?')) return;
+    if (!confirm(t('branches.deleteConfirm'))) return;
 
     try {
       await branchService.delete(branchId);
       loadBranches();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to delete branch');
+      alert(error.response?.data?.error || t('branches.deleteFailed'));
     }
   };
 
-  // شاشة إدخال كلمة المرور
-  // شاشة إدخال كلمة المرور
   if (!isUnlocked) {
     return (
       <DashboardLayout>
@@ -129,10 +128,10 @@ export default function BranchesPage() {
                 </div>
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                إدارة الفروع
+                {t('branches.title')}
               </h2>
               <p className="text-primary-600 font-semibold mb-4">
-                Protected area
+                {t('branches.protectedArea')}
               </p>
               <div className="w-16 h-1 bg-gradient-to-r from-primary-500 to-secondary-400 mx-auto rounded-full"></div>
             </div>
@@ -147,14 +146,14 @@ export default function BranchesPage() {
                   <Lock className="w-8 h-8 text-primary-600" />
                 </div>
                 <p className="text-gray-600 text-center text-sm">
-                  Please enter the password to access branch settings
+                  {t('branches.enterPassword')}
                 </p>
               </div>
 
               <form onSubmit={handlePasswordSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    كلمة المرور
+                    {t('login.password')}
                   </label>
                   <input
                     type="password"
@@ -178,7 +177,7 @@ export default function BranchesPage() {
                   type="submit"
                   className="w-full bg-gradient-to-r from-primary-600 to-primary-500 text-white py-3 rounded-xl font-semibold hover:from-primary-700 hover:to-primary-600 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
-                  Unlock
+                  {t('branches.unlock')}
                 </button>
               </form>
             </div>
@@ -186,14 +185,14 @@ export default function BranchesPage() {
             <div className="text-center mt-6 space-y-4">
               <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm">
                 <p className="text-blue-800 font-medium mb-2">
-                  Contact the development company to add new branches
+                  {t('branches.contactDevCompany')}
                 </p>
                 <div className="flex flex-col gap-1 text-blue-600 dir-ltr">
                   <span className="font-mono font-bold">0925232731</span>
                   <span className="font-mono font-bold">0915730097</span>
                 </div>
               </div>
-              <p className="text-xs text-gray-400">Secure bank check printing system</p>
+              <p className="text-xs text-gray-400">{t('branches.secureSystem')}</p>
             </div>
           </div>
         </div>
@@ -219,15 +218,15 @@ export default function BranchesPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">Branch Management</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{t('branches.title')}</h1>
           <div className="flex items-center gap-3">
             <button
               onClick={handleLock}
               className="btn bg-gray-200 text-gray-700 hover:bg-gray-300 flex items-center gap-2"
-              title="Lock page"
+              title={t('branches.lockPage')}
             >
               <Lock className="w-5 h-5" />
-              Lock
+              {t('branches.lock')}
             </button>
             <button
               onClick={() => {
@@ -244,8 +243,8 @@ export default function BranchesPage() {
               className="btn btn-primary flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
-Add Branch
-          </button>
+              {t('branches.addBranch')}
+            </button>
           </div>
         </div>
 
@@ -269,21 +268,21 @@ Add Branch
 
               <div className="space-y-2 mb-4">
                 <div>
-                  <p className="text-xs text-gray-500">Routing Number</p>
+                  <p className="text-xs text-gray-500">{t('branches.routingNumber')}</p>
                   <p className="font-mono font-semibold text-gray-800">
                     {branch.routingNumber}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Branch Number</p>
+                  <p className="text-xs text-gray-500">{t('branches.branchNumber')}</p>
                   <p className="font-mono font-semibold text-gray-800">
-                    {branch.branchNumber || 'Not set'}
+                    {branch.branchNumber || t('common.notSet')}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Accounting Number</p>
+                  <p className="text-xs text-gray-500">{t('branches.accountingNumber')}</p>
                   <p className="font-mono font-semibold text-gray-800">
-                    {branch.accountingNumber || 'Not set'}
+                    {branch.accountingNumber || t('common.notSet')}
                   </p>
                 </div>
               </div>
@@ -294,7 +293,7 @@ Add Branch
                   className="flex-1 btn btn-secondary flex items-center justify-center gap-2"
                 >
                   <Edit2 className="w-4 h-4" />
-                  تعديل
+                  {t('common.edit')}
                 </button>
                 <button
                   onClick={() => handleDelete(branch.id)}
@@ -310,12 +309,12 @@ Add Branch
         {branches.length === 0 && (
           <div className="card text-center py-12">
             <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No branches yet</p>
+            <p className="text-gray-600">{t('branches.noBranches')}</p>
             <button
               onClick={() => setShowModal(true)}
               className="mt-4 btn btn-primary"
             >
-              Add New Branch
+              {t('branches.addNewBranch')}
             </button>
           </div>
         )}
@@ -326,13 +325,13 @@ Add Branch
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="card max-w-md w-full mx-4">
             <h2 className="text-xl font-bold text-gray-800 mb-4">
-              {editingBranch ? 'تعديل فرع' : 'Add New Branch'}
+              {editingBranch ? t('branches.editBranch') : t('branches.addNewBranch')}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Branch Name
+                  {t('branches.branchName')}
                 </label>
                 <input
                   type="text"
@@ -347,7 +346,7 @@ Add Branch
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location
+                  {t('branches.location')}
                 </label>
                 <input
                   type="text"
@@ -362,7 +361,7 @@ Add Branch
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Routing Number
+                  {t('branches.routingNumber')}
                 </label>
                 <input
                   type="text"
@@ -377,7 +376,7 @@ Add Branch
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  رقم الفرع
+                  {t('branches.branchNumber')}
                 </label>
                 <input
                   type="text"
@@ -386,13 +385,13 @@ Add Branch
                     setFormData({ ...formData, branch_number: e.target.value })
                   }
                   className="input"
-                  placeholder="e.g. 123"
+                  placeholder={t('branches.branchNumberPlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  الرقم المحاسبي
+                  {t('branches.accountingNumber')}
                 </label>
                 <input
                   type="text"
@@ -401,13 +400,13 @@ Add Branch
                     setFormData({ ...formData, accounting_number: e.target.value })
                   }
                   className="input"
-                  placeholder="e.g. 001-2024"
+                  placeholder={t('branches.accountingNumberPlaceholder')}
                 />
               </div>
 
               <div className="flex gap-3 pt-4">
                 <button type="submit" className="flex-1 btn btn-primary">
-                  Save
+                  {t('common.save')}
                 </button>
                 <button
                   type="button"
@@ -417,7 +416,7 @@ Add Branch
                   }}
                   className="flex-1 btn btn-secondary"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>
@@ -427,4 +426,3 @@ Add Branch
     </DashboardLayout>
   );
 }
-

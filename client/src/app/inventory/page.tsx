@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { inventoryService } from '@/lib/api';
 import { Inventory, InventoryTransaction } from '@/types';
-import { Package, Plus, Minus, History, TrendingUp, TrendingDown } from 'lucide-react';
-import { formatDateShort, formatNumber } from '@/utils/locale';
+import { Package, Plus, TrendingUp, TrendingDown } from 'lucide-react';
+import { formatDateShort } from '@/utils/locale';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 export default function InventoryPage() {
+  const { t } = useTranslation();
   const [inventory, setInventory] = useState<Inventory[]>([]);
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,7 @@ export default function InventoryPage() {
       });
       loadInventoryData();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to add stock');
+      alert(error.response?.data?.error || t('inventory.failedToAddStock'));
     }
   };
 
@@ -73,13 +75,13 @@ export default function InventoryPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">Inventory Management</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{t('inventory.title')}</h1>
           <button
             onClick={() => setShowAddModal(true)}
             className="btn btn-primary flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
-            Add Stock
+            {t('inventory.addStockButton')}
           </button>
         </div>
 
@@ -89,14 +91,16 @@ export default function InventoryPage() {
             <div key={item.id} className="card">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">
-                  {item.stockType === 1 ? 'Individual & Employee Checks' : 'Corporate Checks'}
+                  {item.stockType === 1
+                    ? t('inventory.individualEmployeeChecks')
+                    : t('inventory.corporateChecks')}
                 </h3>
                 <Package className="w-8 h-8 text-blue-500" />
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Available Quantity:</span>
+                  <span className="text-gray-600">{t('inventory.availableQuantity')}</span>
                   <span className="text-2xl font-bold text-gray-800">
                     {item.quantity}
                   </span>
@@ -111,10 +115,10 @@ export default function InventoryPage() {
                     }`}
                 >
                   {item.quantity > 100
-                    ? 'Stock OK'
+                    ? t('inventory.stockOk')
                     : item.quantity > 50
-                      ? 'Stock Medium'
-                      : 'Stock Low - Please add stock'}
+                      ? t('inventory.stockMedium')
+                      : t('inventory.stockLow')}
                 </div>
               </div>
             </div>
@@ -124,7 +128,7 @@ export default function InventoryPage() {
         {/* Transaction History */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
-            Inventory Transaction History
+            {t('inventory.transactionHistory')}
           </h2>
 
           <div className="overflow-x-auto">
@@ -132,19 +136,19 @@ export default function InventoryPage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    Type
+                    {t('common.type')}
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    Operation
+                    {t('inventory.operation')}
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    Quantity
+                    {t('inventory.quantity')}
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    Date
+                    {t('common.date')}
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    Notes
+                    {t('inventory.notes')}
                   </th>
                 </tr>
               </thead>
@@ -152,7 +156,9 @@ export default function InventoryPage() {
                 {transactions.map((trans) => (
                   <tr key={trans.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-sm">
-                      {trans.stockType === 1 ? 'Individual/Employee' : 'Corporate'}
+                      {trans.stockType === 1
+                        ? t('inventory.individualEmployee')
+                        : t('inventory.corporate')}
                     </td>
                     <td className="py-3 px-4">
                       <span
@@ -166,7 +172,7 @@ export default function InventoryPage() {
                         ) : (
                           <TrendingDown className="w-4 h-4" />
                         )}
-                        {trans.transactionType === 'ADD' ? 'Add' : 'Deduct'}
+                        {trans.transactionType === 'ADD' ? t('common.add') : t('inventory.deduct')}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-sm font-mono">{trans.quantity}</td>
@@ -188,12 +194,12 @@ export default function InventoryPage() {
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="card max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Add New Stock</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">{t('inventory.addStock')}</h2>
 
             <form onSubmit={handleAddStock} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Check Type
+                  {t('inventory.checkType')}
                 </label>
                 <select
                   value={addForm.stock_type}
@@ -203,14 +209,14 @@ export default function InventoryPage() {
                   className="input"
                   required
                 >
-                  <option value={1}>Individual & Employee Checks</option>
-                  <option value={2}>Corporate Checks</option>
+                  <option value={1}>{t('inventory.individualEmployeeChecks')}</option>
+                  <option value={2}>{t('inventory.corporateChecks')}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Quantity
+                  {t('inventory.quantity')}
                 </label>
                 <input
                   type="number"
@@ -226,7 +232,7 @@ export default function InventoryPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notes
+                  {t('inventory.notes')}
                 </label>
                 <textarea
                   value={addForm.notes}
@@ -238,14 +244,14 @@ export default function InventoryPage() {
 
               <div className="flex gap-3 pt-4">
                 <button type="submit" className="flex-1 btn btn-primary">
-                  Add
+                  {t('common.add')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
                   className="flex-1 btn btn-secondary"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>
@@ -255,4 +261,3 @@ export default function InventoryPage() {
     </DashboardLayout>
   );
 }
-

@@ -5,8 +5,10 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { certifiedCheckService, branchService, inventoryService } from '@/lib/api';
 import { CertifiedBranch, CertifiedSerialRange, CertifiedStatistics } from '@/lib/api/services/certifiedCheck.service';
 import { Stamp, Printer, RefreshCw, CheckCircle, AlertCircle, Building2, Package } from 'lucide-react';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 export default function CertifiedChecksPage() {
+  const { t } = useTranslation();
     const [branches, setBranches] = useState<CertifiedBranch[]>([]);
     const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
     const [serialRange, setSerialRange] = useState<CertifiedSerialRange | null>(null);
@@ -45,7 +47,7 @@ export default function CertifiedChecksPage() {
             setAvailableStock((stockData as any).quantity);
         } catch (err) {
             console.error('Error loading data:', err);
-            setError('Failed to load data');
+            setError(t('certifiedChecks.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -75,29 +77,29 @@ export default function CertifiedChecksPage() {
 
     const handlePrint = async () => {
         if (!selectedBranch) {
-            setError('Please select a branch first');
+            setError(t('certifiedChecks.selectBranchFirst'));
             return;
         }
 
         // Find selected branch
         const branch = branches.find(b => b.id === selectedBranch);
         if (!branch) {
-            setError('Branch not found');
+            setError(t('certifiedChecks.branchNotFound'));
             return;
         }
 
         if (!branch.accountingNumber) {
-            setError('Branch has no accounting number. Please update it in Branch Management first.');
+            setError(t('certifiedChecks.noAccountingNumber'));
             return;
         }
 
         if (!branch.routingNumber) {
-            setError('Branch has no routing number. Please update it in Branch Management first.');
+            setError(t('certifiedChecks.noRoutingNumber'));
             return;
         }
 
         if (!serialRange) {
-            setError('Please wait until serial number range is loaded');
+            setError(t('certifiedChecks.waitSerialRange'));
             return;
         }
 
@@ -126,24 +128,32 @@ export default function CertifiedChecksPage() {
                 // Generate print HTML and open print dialog
                 const printData = result.printData;
                 if (!printData) {
-                    throw new Error('لم يتم إرجاع بيانات الطباعة');
+                    throw new Error(t('certifiedChecks.printDataMissing'));
                 }
 
                 console.log('📄 Opening print window with data:', printData);
                 openPrintWindow(printData);
 
                 const booksCount = printData.numberOfBooks || 1;
-                setSuccess(`${booksCount} ${booksCount === 1 ? 'book' : 'books'} issued successfully! (${printData.firstSerial} - ${printData.lastSerial})`);
+                const booksLabel = booksCount === 1
+                    ? t('certifiedChecks.bookSingular')
+                    : t('certifiedChecks.bookPlural');
+                setSuccess(t('certifiedChecks.issueSuccess', {
+                    count: booksCount,
+                    booksLabel,
+                    from: printData.firstSerial,
+                    to: printData.lastSerial,
+                }));
                 setNotes('');
                 setCustomStartSerial(''); // إعادة تعيين بداية التسلسل
                 loadData(); // Reload statistics
                 loadSerialRange(selectedBranch); // Reload serial range
             } else {
-                throw new Error('Failed to issue certified check book: no success result returned');
+                throw new Error(t('certifiedChecks.issueFailed'));
             }
         } catch (err: any) {
             console.error('❌ Error printing:', err);
-            const errorMessage = err.response?.data?.error || err.message || 'Failed to issue certified check book';
+            const errorMessage = err.response?.data?.error || err.message || t('certifiedChecks.issueFailed');
             setError(errorMessage);
         } finally {
             setPrinting(false);
@@ -233,8 +243,8 @@ export default function CertifiedChecksPage() {
                             <Stamp className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-800">Issue Certified Check Books</h1>
-                            <p className="text-gray-600">Print certified check books for branches (50 sheets)</p>
+                            <h1 className="text-2xl font-bold text-gray-800">{t('certifiedChecks.title')}</h1>
+                            <p className="text-gray-600">{t('certifiedChecks.subtitle')}</p>
                         </div>
                     </div>
                     <button
@@ -242,7 +252,7 @@ export default function CertifiedChecksPage() {
                         className="btn btn-secondary flex items-center gap-2"
                     >
                         <RefreshCw className="w-5 h-5" />
-                        Refresh
+                        {t('common.refresh')}
                     </button>
                 </div>
 
@@ -251,7 +261,7 @@ export default function CertifiedChecksPage() {
                     <div className="card bg-gradient-to-br from-amber-50 to-white border-2 border-amber-100">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600 mb-1">Total books printed</p>
+                                <p className="text-sm text-gray-600 mb-1">{t('certifiedChecks.totalBooksPrinted')}</p>
                                 <p className="text-3xl font-bold text-amber-600">{statistics?.totalBooks || 0}</p>
                             </div>
                             <div className="bg-amber-100 p-3 rounded-xl">
@@ -263,7 +273,7 @@ export default function CertifiedChecksPage() {
                     <div className="card bg-gradient-to-br from-blue-50 to-white border-2 border-blue-100">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600 mb-1">Total checks</p>
+                                <p className="text-sm text-gray-600 mb-1">{t('certifiedChecks.totalChecks')}</p>
                                 <p className="text-3xl font-bold text-blue-600">{statistics?.totalChecks || 0}</p>
                             </div>
                             <div className="bg-blue-100 p-3 rounded-xl">
@@ -275,7 +285,7 @@ export default function CertifiedChecksPage() {
                     <div className="card bg-gradient-to-br from-green-50 to-white border-2 border-green-100">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600 mb-1">Available stock</p>
+                                <p className="text-sm text-gray-600 mb-1">{t('certifiedChecks.availableStock')}</p>
                                 <p className="text-3xl font-bold text-green-600">{availableStock ?? 0}</p>
                             </div>
                             <div className="bg-green-100 p-3 rounded-xl">
@@ -287,11 +297,11 @@ export default function CertifiedChecksPage() {
                     <div className="card bg-gradient-to-br from-purple-50 to-white border-2 border-purple-100">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600 mb-1">Last print</p>
+                                <p className="text-sm text-gray-600 mb-1">{t('certifiedChecks.lastPrint')}</p>
                                 <p className="text-lg font-bold text-purple-600">
                                     {statistics?.lastPrintDate
                                         ? new Date(statistics.lastPrintDate).toLocaleDateString('ar-LY')
-                                        : 'None'}
+                                        : t('common.none')}
                                 </p>
                             </div>
                             <div className="bg-purple-100 p-3 rounded-xl">
@@ -306,7 +316,7 @@ export default function CertifiedChecksPage() {
                     <div className="card">
                         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                             <Building2 className="w-5 h-5 text-primary-600" />
-                            Last serial per branch
+                            {t('certifiedChecks.lastSerialPerBranch')}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {statistics.branchSerials.map((bs) => (
@@ -321,7 +331,7 @@ export default function CertifiedChecksPage() {
 
                 {/* Print Form */}
                 <div className="card">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">Issue new book</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">{t('certifiedChecks.issueNewBook')}</h3>
 
                     {error && (
                         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700">
@@ -340,17 +350,20 @@ export default function CertifiedChecksPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Select branch <span className="text-red-500">*</span>
+                                {t('certifiedChecks.selectBranch')} <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={selectedBranch || ''}
                                 onChange={(e) => setSelectedBranch(e.target.value ? Number(e.target.value) : null)}
                                 className="input"
                             >
-                                <option value="">-- اختر الفرع --</option>
+                                <option value="">{t('certifiedChecks.selectBranchOption')}</option>
                                 {branches.map((branch) => (
                                     <option key={branch.id} value={branch.id}>
-                                        {branch.branchName} (آخر تسلسل: {branch.lastSerial})
+                                        {t('certifiedChecks.branchWithLastSerial', {
+                                            name: branch.branchName,
+                                            serial: branch.lastSerial,
+                                        })}
                                     </option>
                                 ))}
                             </select>
@@ -358,24 +371,24 @@ export default function CertifiedChecksPage() {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                بداية التسلسل
+                                {t('certifiedChecks.startSerial')}
                             </label>
                             <input
                                 type="number"
                                 value={customStartSerial}
                                 onChange={(e) => setCustomStartSerial(e.target.value)}
                                 className="input"
-                                placeholder="مثال: 000000001"
+                                placeholder={t('certifiedChecks.startSerialPlaceholder')}
                                 min="1"
                             />
                             <p className="text-xs text-gray-500 mt-1">
-                                اتركه فارغاً للاستمرار من آخر تسلسل
+                                {t('certifiedChecks.startSerialHint')}
                             </p>
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                عدد الدفاتر <span className="text-red-500">*</span>
+                                {t('certifiedChecks.numberOfBooks')} <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="number"
@@ -386,20 +399,20 @@ export default function CertifiedChecksPage() {
                                 max="100"
                             />
                             <p className="text-xs text-gray-500 mt-1">
-                                كل دفتر = 50 ورقة
+                                {t('certifiedChecks.eachBookSheets')}
                             </p>
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                ملاحظات (اختياري)
+                                {t('certifiedChecks.notesOptional')}
                             </label>
                             <input
                                 type="text"
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                                 className="input"
-                                placeholder="أدخل ملاحظات إن وجدت..."
+                                placeholder={t('certifiedChecks.notesPlaceholder')}
                             />
                         </div>
                     </div>
@@ -407,32 +420,32 @@ export default function CertifiedChecksPage() {
                     {/* Serial Range Preview */}
                     {serialRange && (
                         <div className="mt-6 p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border-2 border-amber-200">
-                            <h4 className="font-bold text-gray-800 mb-4">معاينة الدفتر</h4>
+                            <h4 className="font-bold text-gray-800 mb-4">{t('certifiedChecks.bookPreview')}</h4>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div>
-                                    <p className="text-sm text-gray-600">الفرع</p>
+                                    <p className="text-sm text-gray-600">{t('common.branch')}</p>
                                     <p className="font-bold text-gray-800">{serialRange.branchName}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-600">الرقم المحاسبي</p>
-                                    <p className="font-bold font-mono text-gray-800">{serialRange.accountingNumber || 'غير محدد'}</p>
+                                    <p className="text-sm text-gray-600">{t('certifiedChecks.accountingNumber')}</p>
+                                    <p className="font-bold font-mono text-gray-800">{serialRange.accountingNumber || t('common.notSet')}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-600">من رقم</p>
+                                    <p className="text-sm text-gray-600">{t('certifiedChecks.fromNumber')}</p>
                                     <p className="font-bold font-mono text-primary-600">{serialRange.firstSerial}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-600">إلى رقم</p>
+                                    <p className="text-sm text-gray-600">{t('certifiedChecks.toNumber')}</p>
                                     <p className="font-bold font-mono text-primary-600">{serialRange.lastSerial}</p>
                                 </div>
                                 {serialRange.numberOfBooks && (
                                     <div>
-                                        <p className="text-sm text-gray-600">عدد الدفاتر</p>
+                                        <p className="text-sm text-gray-600">{t('certifiedChecks.numberOfBooks')}</p>
                                         <p className="font-bold text-primary-600">{serialRange.numberOfBooks}</p>
                                     </div>
                                 )}
                                 <div>
-                                    <p className="text-sm text-gray-600">إجمالي الأوراق</p>
+                                    <p className="text-sm text-gray-600">{t('certifiedChecks.totalSheets')}</p>
                                     <p className="font-bold text-primary-600">{serialRange.totalChecks || (serialRange.lastSerial - serialRange.firstSerial + 1)}</p>
                                 </div>
                             </div>
@@ -450,12 +463,18 @@ export default function CertifiedChecksPage() {
                             {printing ? (
                                 <>
                                     <RefreshCw className="w-5 h-5 animate-spin" />
-                                    جاري الطباعة...
+                                    {t('common.printing')}
                                 </>
                             ) : (
                                 <>
                                     <Printer className="w-5 h-5" />
-                                    طباعة {numberOfBooks} {numberOfBooks === 1 ? 'دفتر' : 'دفاتر'} ({numberOfBooks * 50} ورقة)
+                                    {t('certifiedChecks.printBooks', {
+                                        count: numberOfBooks,
+                                        booksLabel: numberOfBooks === 1
+                                            ? t('certifiedChecks.bookSingular')
+                                            : t('certifiedChecks.bookPlural'),
+                                        sheets: numberOfBooks * 50,
+                                    })}
                                 </>
                             )}
                         </button>

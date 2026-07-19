@@ -69,9 +69,15 @@ export class PrintLogController {
       res.json(printLog);
     } catch (error: any) {
       console.error('خطأ في إنشاء سجل الطباعة:', error);
-      res.status(500).json({
-        error: 'فشل في إنشاء سجل الطباعة',
-        details: error.message,
+      const message = error?.message || 'فشل في إنشاء سجل الطباعة';
+      const isInventoryError =
+        message.includes('مخزون') ||
+        message.includes('inventory') ||
+        message.includes('Insufficient');
+
+      res.status(isInventoryError ? 400 : 500).json({
+        error: message,
+        details: message,
       });
     }
   }
