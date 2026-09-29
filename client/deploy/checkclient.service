@@ -1,0 +1,39 @@
+[Unit]
+Description=Check System Client (Next.js)
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/CheckSystem_andalus/client
+# Adjust WorkingDirectory above if your deploy path differs.
+
+Environment=NODE_ENV=production
+Environment=PORT=4070
+# Prefer systemd EnvironmentFile over dotenvx when possible:
+# EnvironmentFile=-/home/admin/CheckSystem_andalus/client/.env.production
+
+# Option A (recommended): no dotenvx — use EnvironmentFile above
+# ExecStart=/usr/bin/node scripts/run-next.js start -H 0.0.0.0 -p 4070
+
+# Option B: keep dotenvx (requires .env.production to exist)
+ExecStart=/bin/bash -lc 'npx --yes @dotenvx/dotenvx run -f .env.production -- node scripts/run-next.js start -H 0.0.0.0 -p 4070'
+
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# Give Next.js time to bind the port
+TimeoutStartSec=60
+TimeoutStopSec=30
+KillMode=mixed
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=checkclient
+
+[Install]
+WantedBy=multi-user.target

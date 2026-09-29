@@ -1,0 +1,35 @@
+[Unit]
+Description=Check API Server
+After=network.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/CheckSystem_andalus/server
+
+Environment=NODE_ENV=production
+# EnvironmentFile=-/home/admin/CheckSystem_andalus/server/.env
+
+# مفضّل: تشغيل مباشر بدون npm
+ExecStart=/usr/bin/node dist/index.js
+
+# بديل مكافئ لما كان في الوحدة القديمة:
+# ExecStart=/usr/bin/npm run start:prod
+
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+TimeoutStartSec=60
+TimeoutStopSec=30
+KillMode=mixed
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=checkserver
+
+[Install]
+WantedBy=multi-user.target

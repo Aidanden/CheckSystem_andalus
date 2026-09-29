@@ -1,8 +1,24 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api';
+/**
+ * Resolve API base URL for the browser.
+ * Never use localhost/127.0.0.1 from the user's machine — that breaks production.
+ * Prefer same-origin `/api` (Next.js rewrites to Express).
+ */
+function resolveApiUrl(): string {
+  const configured = (process.env.NEXT_PUBLIC_API_URL || '').trim();
 
-// Create axios instance
+  if (typeof window !== 'undefined') {
+    if (!configured || /localhost|127\.0\.0\.1/i.test(configured)) {
+      return '/api';
+    }
+  }
+
+  return configured || '/api';
+}
+
+const API_URL = resolveApiUrl();
+
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
@@ -11,7 +27,6 @@ const apiClient: AxiosInstance = axios.create({
   timeout: 30000,
 });
 
-// Request interceptor - add auth token
 apiClient.interceptors.request.use(
   (config) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -22,32 +37,28 @@ apiClient.interceptors.request.use(
 
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor - handle errors
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
-        window.location.href = '/login';
+        // Don't redirect away from the login page itself
+        if (!window.location.pathname.startsWith('/login')) {
+          window.location.href = '/login';
+        }
       }
     }
-
     return Promise.reject(error);
   }
 );
 
-// Helper function for requests
 export const request = async <T = any>(config: AxiosRequestConfig): Promise<T> => {
   const response = await apiClient.request<T>(config);
   return response.data;
 };
 
 export default apiClient;
-

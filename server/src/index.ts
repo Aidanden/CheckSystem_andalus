@@ -16,9 +16,30 @@ const PORT = process.env.PORT || 5050;
 const HOST = process.env.HOST || 'localhost';
 
 // Middleware
-app.use(helmet()); // Security headers
+app.use(helmet({
+  // Allow browser on :4070 to read proxied/direct API responses
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:4070')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:4070',
+  origin: (origin, callback) => {
+    // Allow non-browser / same-origin tools (no Origin header)
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    console.warn(`CORS blocked origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true,
 }));
 // Use secure logging configuration

@@ -1,6 +1,16 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5050/api/print-settings';
+function resolveApiBase(): string {
+  const configured = (process.env.NEXT_PUBLIC_API_URL || '').trim().replace(/\/$/, '');
+  if (typeof window !== 'undefined') {
+    if (!configured || /localhost|127\.0\.0\.1/i.test(configured)) {
+      return '/api';
+    }
+  }
+  return configured || '/api';
+}
+
+const API_URL = `${resolveApiBase()}/print-settings`;
 
 export type PrintMode = 'single' | 'sheet3';
 

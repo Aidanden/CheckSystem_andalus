@@ -24,15 +24,26 @@ export const login = createAsyncThunk(
   async (credentials: LoginRequest, { rejectWithValue }) => {
     try {
       const response = await authService.login(credentials);
-      
-      // Save token to localStorage
+
+      if (!response?.token) {
+        return rejectWithValue('Login failed: invalid server response');
+      }
+
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', response.token);
       }
-      
+
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error || 'Login failed');
+      const apiError =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        (error.code === 'ERR_NETWORK'
+          ? 'Cannot reach API. Check that the client uses /api (rebuild required).'
+          : null) ||
+        error.message ||
+        'Login failed';
+      return rejectWithValue(apiError);
     }
   }
 );

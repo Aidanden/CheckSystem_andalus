@@ -192,7 +192,8 @@ export default function SettingsPage() {
 
       if (!token) return;
 
-      const response = await fetch(`http://localhost:5050/api/print-settings/${activeTab}`, {
+      const apiBase = (process.env.NEXT_PUBLIC_API_URL?.trim() || '/api').replace(/\/$/, '');
+      const response = await fetch(`${apiBase}/print-settings/${activeTab}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -256,7 +257,8 @@ export default function SettingsPage() {
         return;
       }
 
-      const response = await fetch('http://localhost:5050/api/print-settings', {
+      const apiBase = (process.env.NEXT_PUBLIC_API_URL?.trim() || '/api').replace(/\/$/, '');
+      const response = await fetch(`${apiBase}/print-settings`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

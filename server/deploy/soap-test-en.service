@@ -1,0 +1,37 @@
+[Unit]
+Description=FCUBS SOAP Mock Server (English)
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=admin
+Group=admin
+# عدّل المسار إذا كان مختلفاً على السيرفر
+WorkingDirectory=/home/admin/CheckSystem_andalus/server
+
+Environment=NODE_ENV=production
+# المنفذ الافتراضي في السكربت هو 8080
+# Environment=PORT=8080
+
+# تشغيل مباشر أوضح من npm (أقل اعتماداً على shell/npx)
+ExecStart=/usr/bin/node server_soap_test_en.js
+
+# بديل مكافئ لـ npm run soap:test:en:
+# ExecStart=/usr/bin/npm run soap:test:en
+
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+TimeoutStartSec=30
+TimeoutStopSec=15
+KillMode=mixed
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=soap-test-en
+
+[Install]
+WantedBy=multi-user.target
