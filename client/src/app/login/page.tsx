@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { login, clearError } from '@/store/slices/authSlice';
-import Image from 'next/image';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useTranslation } from '@/i18n/I18nProvider';
 
@@ -51,23 +50,9 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md px-4">
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-6">
-            <div className="bg-white p-4 rounded-2xl shadow-lg">
-              <Image
-                src="/images/1.png"
-                alt="Logo"
-                width={120}
-                height={120}
-                className="w-28 h-28 object-contain"
-              />
-            </div>
-          </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            {t('login.bankName')}
-          </h1>
-          <p className="text-lg text-primary-600 font-semibold mb-1">
             {t('login.systemName')}
-          </p>
+          </h1>
           <div className="w-24 h-1 bg-gradient-to-r from-primary-500 to-secondary-400 mx-auto rounded-full"></div>
         </div>
 

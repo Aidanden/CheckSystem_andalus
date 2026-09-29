@@ -19,6 +19,7 @@ interface PrintSettings {
   accountType: 1 | 2 | 3 | 4;
   checkWidth: number;
   checkHeight: number;
+  printMode: 'single' | 'sheet3';
   branchName: PrintPosition;
   serialNumber: PrintPosition;
   accountNumber: PrintPosition | null;
@@ -31,6 +32,7 @@ const DEFAULT_INDIVIDUAL: PrintSettings = {
   accountType: 1,
   checkWidth: 235,
   checkHeight: 86,
+  printMode: 'single',
   branchName: { x: 20, y: 10, fontSize: 14, align: 'left' },
   serialNumber: { x: 200, y: 18, fontSize: 12, align: 'right' },
   accountNumber: { x: 117.5, y: 10, fontSize: 14, align: 'center' },
@@ -43,6 +45,7 @@ const DEFAULT_CORPORATE: PrintSettings = {
   accountType: 2,
   checkWidth: 240,
   checkHeight: 86,
+  printMode: 'single',
   branchName: { x: 20, y: 10, fontSize: 14, align: 'left' },
   serialNumber: { x: 205, y: 18, fontSize: 12, align: 'right' },
   accountNumber: { x: 120, y: 10, fontSize: 14, align: 'center' },
@@ -55,6 +58,7 @@ const DEFAULT_BANK_STAFF: PrintSettings = {
   accountType: 3,
   checkWidth: 235,
   checkHeight: 86,
+  printMode: 'single',
   branchName: { ...DEFAULT_INDIVIDUAL.branchName },
   serialNumber: { ...DEFAULT_INDIVIDUAL.serialNumber },
   accountNumber: DEFAULT_INDIVIDUAL.accountNumber ? { ...DEFAULT_INDIVIDUAL.accountNumber } : null,
@@ -196,12 +200,16 @@ export default function SettingsPage() {
 
       if (response.ok) {
         const data = await response.json();
+        const normalized = {
+          ...data,
+          printMode: data.printMode === 'sheet3' ? 'sheet3' : 'single',
+        };
         if (activeTab === 1) {
-          setIndividualSettings(data);
+          setIndividualSettings(normalized);
         } else if (activeTab === 2) {
-          setCorporateSettings(data);
+          setCorporateSettings(normalized);
         } else {
-          setBankStaffSettings(data);
+          setBankStaffSettings(normalized);
         }
       }
     } catch (err) {
@@ -211,11 +219,11 @@ export default function SettingsPage() {
     }
   };
 
-  const updatePosition = (field: keyof Omit<PrintSettings, 'id' | 'accountType' | 'checkWidth' | 'checkHeight'>, key: keyof PrintPosition, value: number | string) => {
+  const updatePosition = (field: keyof Omit<PrintSettings, 'id' | 'accountType' | 'checkWidth' | 'checkHeight' | 'printMode'>, key: keyof PrintPosition, value: number | string) => {
     setCurrentSettings(prev => ({
       ...prev,
       [field]: {
-        ...prev[field],
+        ...(prev[field] as PrintPosition),
         [key]: value
       }
     }));
@@ -226,6 +234,13 @@ export default function SettingsPage() {
       ...prev,
       [key]: value
     }));
+  };
+
+  const updatePrintMode = (printMode: 'single' | 'sheet3') => {
+    // Apply to all account-type tabs so print mode is not lost when printing another type
+    setIndividualSettings((prev) => ({ ...prev, printMode }));
+    setCorporateSettings((prev) => ({ ...prev, printMode }));
+    setBankStaffSettings((prev) => ({ ...prev, printMode }));
   };
 
   const handleSave = async () => {
@@ -330,64 +345,71 @@ export default function SettingsPage() {
     }
 
     // للشيكات العادية (الأفراد، الشركات، الموظفين)
-    const testCheckData = {
-      checkNumber: 1,
-      serialNumber: '000000001',
-      accountHolderName: 'Ahmed Mohamed Ali',
-      accountNumber: '001001000811217',
-      accountType: activeTab === 1 ? 'Individual' : activeTab === 2 ? 'Corporate' : 'Employee',
-      routingNumber: '1100000001',
-      branchName: 'Main Branch',
-      micrLine: `0${activeTab} 1100000001 001001000811217 000000001`,
-      checkSize: {
-        width: currentSettings.checkWidth,
-        height: currentSettings.checkHeight,
-        unit: 'mm'
-      },
-      branchNameX: currentSettings.branchName.x,
-      branchNameY: currentSettings.branchName.y,
-      branchNameFontSize: currentSettings.branchName.fontSize,
-      branchNameAlign: currentSettings.branchName.align,
-      serialNumberX: currentSettings.serialNumber.x,
-      serialNumberY: currentSettings.serialNumber.y,
-      serialNumberFontSize: currentSettings.serialNumber.fontSize,
-      serialNumberAlign: currentSettings.serialNumber.align,
-      accountNumberX: currentSettings.accountNumber?.x ?? 0,
-      accountNumberY: currentSettings.accountNumber?.y ?? 0,
-      accountNumberFontSize: currentSettings.accountNumber?.fontSize ?? 0,
-      accountNumberAlign: currentSettings.accountNumber?.align ?? 'center',
-      checkSequenceX: currentSettings.checkSequence.x,
-      checkSequenceY: currentSettings.checkSequence.y,
-      checkSequenceFontSize: currentSettings.checkSequence.fontSize,
-      checkSequenceAlign: currentSettings.checkSequence.align,
-      accountHolderNameX: currentSettings.accountHolderName.x,
-      accountHolderNameY: currentSettings.accountHolderName.y,
-      accountHolderNameFontSize: currentSettings.accountHolderName.fontSize,
-      accountHolderNameAlign: currentSettings.accountHolderName.align,
-      micrLineX: currentSettings.micrLine.x,
-      micrLineY: currentSettings.micrLine.y,
-      micrLineFontSize: currentSettings.micrLine.fontSize,
-      micrLineAlign: currentSettings.micrLine.align,
+    const makeTestCheck = (index: number) => {
+      const serial = String(index).padStart(9, '0');
+      return {
+        checkNumber: index,
+        serialNumber: serial,
+        accountHolderName: 'Ahmed Mohamed Ali',
+        accountNumber: '001001000811217',
+        accountType: activeTab === 1 ? 'Individual' : activeTab === 2 ? 'Corporate' : 'Employee',
+        routingNumber: '1100000001',
+        branchName: 'Main Branch',
+        micrLine: `0${activeTab} 1100000001 001001000811217 ${serial}`,
+        checkSize: {
+          width: currentSettings.checkWidth,
+          height: currentSettings.checkHeight,
+          unit: 'mm',
+        },
+        branchNameX: currentSettings.branchName.x,
+        branchNameY: currentSettings.branchName.y,
+        branchNameFontSize: currentSettings.branchName.fontSize,
+        branchNameAlign: currentSettings.branchName.align,
+        serialNumberX: currentSettings.serialNumber.x,
+        serialNumberY: currentSettings.serialNumber.y,
+        serialNumberFontSize: currentSettings.serialNumber.fontSize,
+        serialNumberAlign: currentSettings.serialNumber.align,
+        accountNumberX: currentSettings.accountNumber?.x ?? 0,
+        accountNumberY: currentSettings.accountNumber?.y ?? 0,
+        accountNumberFontSize: currentSettings.accountNumber?.fontSize ?? 0,
+        accountNumberAlign: currentSettings.accountNumber?.align ?? 'center',
+        checkSequenceX: currentSettings.checkSequence.x,
+        checkSequenceY: currentSettings.checkSequence.y,
+        checkSequenceFontSize: currentSettings.checkSequence.fontSize,
+        checkSequenceAlign: currentSettings.checkSequence.align,
+        accountHolderNameX: currentSettings.accountHolderName.x,
+        accountHolderNameY: currentSettings.accountHolderName.y,
+        accountHolderNameFontSize: currentSettings.accountHolderName.fontSize,
+        accountHolderNameAlign: currentSettings.accountHolderName.align,
+        micrLineX: currentSettings.micrLine.x,
+        micrLineY: currentSettings.micrLine.y,
+        micrLineFontSize: currentSettings.micrLine.fontSize,
+        micrLineAlign: currentSettings.micrLine.align,
+      };
     };
+
+    const sampleCount = currentSettings.printMode === 'sheet3' ? 3 : 1;
+    const testChecks = Array.from({ length: sampleCount }, (_, i) => makeTestCheck(i + 1));
 
     const checkbookData = {
       operation: {
         accountNumber: '001001000811217',
-        accountHolderName: 'أحمد محمد علي السيد',
+        accountHolderName: 'Ahmed Mohamed Ali',
         accountType: activeTab,
-        branchName: 'الفرع الرئيسي',
+        branchName: 'Main Branch',
         routingNumber: '1100000001',
         serialFrom: 1,
-        serialTo: 1,
-        sheetsPrinted: 1,
+        serialTo: sampleCount,
+        sheetsPrinted: sampleCount,
         printDate: new Date().toISOString(),
       },
-      checks: [testCheckData],
+      checks: testChecks,
     };
 
     try {
-      // استخدام renderCheckbookHtml من printRenderer
-      const htmlContent = renderCheckbookHtml(checkbookData);
+      const htmlContent = renderCheckbookHtml(checkbookData, {
+        printMode: currentSettings.printMode,
+      });
 
       const printWindow = window.open('', '_blank');
       if (!printWindow) {
@@ -631,6 +653,60 @@ export default function SettingsPage() {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Print mode: single check vs sheet of 3 */}
+            <div className="space-y-3 border-t pt-4">
+              <h3 className="font-medium text-gray-700">{t('settings.printMode')}</h3>
+              <p className="text-sm text-gray-500">{t('settings.printModeHint')}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    currentSettings.printMode === 'single'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="printMode"
+                    className="mt-1"
+                    checked={currentSettings.printMode === 'single'}
+                    onChange={() => updatePrintMode('single')}
+                  />
+                  <span>
+                    <span className="block font-medium text-gray-800">{t('settings.printModeSingle')}</span>
+                    <span className="block text-xs text-gray-500 mt-0.5">{t('settings.printModeSingleDesc')}</span>
+                  </span>
+                </label>
+                <label
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    currentSettings.printMode === 'sheet3'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="printMode"
+                    className="mt-1"
+                    checked={currentSettings.printMode === 'sheet3'}
+                    onChange={() => updatePrintMode('sheet3')}
+                  />
+                  <span>
+                    <span className="block font-medium text-gray-800">{t('settings.printModeSheet')}</span>
+                    <span className="block text-xs text-gray-500 mt-0.5">{t('settings.printModeSheetDesc')}</span>
+                  </span>
+                </label>
+              </div>
+              {currentSettings.printMode === 'sheet3' && (
+                <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-md px-3 py-2">
+                  {t('settings.printModeSheetPageSize', {
+                    width: currentSettings.checkWidth,
+                    height: currentSettings.checkHeight * 3,
+                  })}
+                </p>
+              )}
             </div>
 
             {/* Branch Name Position */}

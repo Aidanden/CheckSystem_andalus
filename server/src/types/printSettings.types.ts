@@ -1,5 +1,9 @@
 // Print Settings Types for physical check printing
 
+export type PrintMode = 'single' | 'sheet3';
+
+export const CHECKS_PER_SHEET = 3;
+
 export interface PrintPosition {
   x: number; // mm from left
   y: number; // mm from top
@@ -15,6 +19,9 @@ export interface CheckPrintSettings {
   // Check dimensions (mm)
   checkWidth: number;
   checkHeight: number;
+
+  /** single = 1 check/page; sheet3 = 3 checks stacked per page */
+  printMode?: PrintMode;
 
   // Print positions for each element
   branchName: PrintPosition;
@@ -68,6 +75,7 @@ export const DEFAULT_INDIVIDUAL_SETTINGS: Omit<CheckPrintSettings, 'id' | 'creat
   accountType: 1,
   checkWidth: 235, // mm
   checkHeight: 86, // mm
+  printMode: 'single',
 
   branchName: {
     x: 20, // Moved to left
@@ -122,6 +130,7 @@ export const DEFAULT_CORPORATE_SETTINGS: Omit<CheckPrintSettings, 'id' | 'create
   accountType: 2,
   checkWidth: 240, // mm
   checkHeight: 86, // mm
+  printMode: 'single',
 
   branchName: {
     x: 20, // Moved to left
@@ -176,6 +185,7 @@ export const DEFAULT_BANK_STAFF_SETTINGS: Omit<CheckPrintSettings, 'id' | 'creat
   accountType: 3,
   checkWidth: DEFAULT_INDIVIDUAL_SETTINGS.checkWidth,
   checkHeight: DEFAULT_INDIVIDUAL_SETTINGS.checkHeight,
+  printMode: 'single',
   branchName: { ...DEFAULT_INDIVIDUAL_SETTINGS.branchName },
   serialNumber: { ...DEFAULT_INDIVIDUAL_SETTINGS.serialNumber },
   accountNumber: { ...DEFAULT_INDIVIDUAL_SETTINGS.accountNumber },
@@ -189,6 +199,7 @@ export const DEFAULT_CERTIFIED_SETTINGS: Omit<CheckPrintSettings, 'id' | 'create
   accountType: 4,
   checkWidth: 240, // mm - نفس حجم شيك الشركات
   checkHeight: 86, // mm
+  printMode: 'single',
   branchName: {
     x: 145,
     y: 5,

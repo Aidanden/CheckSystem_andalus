@@ -134,6 +134,8 @@ model PrintSettings {
   accountType               Int      @unique @map("account_type")
   checkWidth                Float    @map("check_width")
   checkHeight               Float    @map("check_height")
+  /// 'single' = one check per page; 'sheet3' = 3 checks stacked on one sheet
+  printMode                 String   @default("single") @map("print_mode")
   branchNameX               Float    @map("branch_name_x")
   branchNameY               Float    @map("branch_name_y")
   branchNameFontSize        Int      @default(14) @map("branch_name_font_size")

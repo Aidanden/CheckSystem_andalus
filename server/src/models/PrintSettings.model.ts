@@ -14,10 +14,20 @@ export class PrintSettingsModel {
     });
   }
 
+  /** Keep sheet/single mode consistent across individual, corporate, and employee. */
+  static async syncPrintModeForRegularTypes(printMode: string): Promise<void> {
+    const mode = printMode === 'sheet3' ? 'sheet3' : 'single';
+    await prisma.printSettings.updateMany({
+      where: { accountType: { in: [1, 2, 3] } },
+      data: { printMode: mode },
+    });
+  }
+
   static async upsert(data: {
     accountType: number;
     checkWidth: number;
     checkHeight: number;
+    printMode?: string;
     branchNameX: number;
     branchNameY: number;
     branchNameFontSize: number;
@@ -69,11 +79,13 @@ export class PrintSettingsModel {
     checkNumberFontSize?: number;
     checkNumberAlign?: string;
   }): Promise<PrintSettings> {
+    const printMode = data.printMode === 'sheet3' ? 'sheet3' : 'single';
     return prisma.printSettings.upsert({
       where: { accountType: data.accountType },
       update: {
         checkWidth: data.checkWidth,
         checkHeight: data.checkHeight,
+        printMode,
         branchNameX: data.branchNameX,
         branchNameY: data.branchNameY,
         branchNameFontSize: data.branchNameFontSize,
@@ -125,7 +137,7 @@ export class PrintSettingsModel {
         checkNumberFontSize: data.checkNumberFontSize,
         checkNumberAlign: data.checkNumberAlign,
       },
-      create: data,
+      create: { ...data, printMode },
     });
   }
 
@@ -141,6 +153,7 @@ export class PrintSettingsModel {
         accountType: settings.accountType,
         checkWidth: settings.checkWidth,
         checkHeight: settings.checkHeight,
+        printMode: settings.printMode === 'sheet3' ? 'sheet3' : 'single',
         branchName: {
           x: settings.branchNameX,
           y: settings.branchNameY,

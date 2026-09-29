@@ -73,7 +73,7 @@ const ar: Messages = {
   },
   brand: {
     name: 'نظام الشيكات',
-    bank: 'مصرف الأندلس',
+    bank: '',
     fullTitle: 'نظام طباعة الشيكات',
   },
   nav: {
@@ -99,7 +99,7 @@ const ar: Messages = {
     user: 'مستخدم',
   },
   login: {
-    bankName: 'مصرف الأندلس',
+    bankName: '',
     systemName: 'نظام طباعة الشيكات',
     username: 'اسم المستخدم',
     password: 'كلمة المرور',
@@ -427,6 +427,13 @@ const ar: Messages = {
     tabEmployee: 'موظفين (10 أوراق)',
     checkSpecifications: 'مواصفات الشيك',
     dimensionsMm: 'الأبعاد (مم)',
+    printMode: 'طريقة الطباعة',
+    printModeHint: 'ينطبق على كل أنواع الحسابات. اختر طباعة شيك واحد في الصفحة أو شيت يحتوي على 3 شيكات.',
+    printModeSingle: 'شيك واحد',
+    printModeSingleDesc: 'شيك واحد في كل صفحة مطبوعة (الحجم الحالي).',
+    printModeSheet: 'شيت (3 شيكات)',
+    printModeSheetDesc: 'ثلاثة شيكات مكدسة عمودياً في كل ورقة.',
+    printModeSheetPageSize: 'حجم صفحة الشيت سيكون {width} × {height} مم.',
     branchName: 'اسم الفرع',
     serialNumber: 'رقم التسلسل',
     secondSerialNumber: 'رقم التسلسل الثاني',

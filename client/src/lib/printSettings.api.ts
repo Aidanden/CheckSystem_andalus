@@ -2,6 +2,8 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5050/api/print-settings';
 
+export type PrintMode = 'single' | 'sheet3';
+
 export interface PrintPosition {
   x: number;
   y: number;
@@ -14,6 +16,8 @@ export interface PrintSettings {
   accountType: 1 | 2 | 3;
   checkWidth: number;
   checkHeight: number;
+  /** single = 1 check/page; sheet3 = 3 checks per sheet */
+  printMode?: PrintMode;
   branchName: PrintPosition;
   serialNumber: PrintPosition;
   accountNumber: PrintPosition;
@@ -32,7 +36,11 @@ class PrintSettingsAPI {
     const response = await axios.get(`${API_URL}/${accountType}`, {
       headers: this.getAuthHeader(),
     });
-    return response.data;
+    const data = response.data as PrintSettings;
+    return {
+      ...data,
+      printMode: data.printMode === 'sheet3' ? 'sheet3' : 'single',
+    };
   }
 
   async saveSettings(settings: PrintSettings): Promise<any> {
@@ -44,4 +52,3 @@ class PrintSettingsAPI {
 }
 
 export const printSettingsAPI = new PrintSettingsAPI();
-

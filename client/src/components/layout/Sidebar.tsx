@@ -4,7 +4,6 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
-import Image from 'next/image';
 import {
   Home,
   Printer,
@@ -63,20 +62,8 @@ export default function Sidebar() {
   return (
     <div className="fixed start-0 top-0 bottom-0 w-72 bg-gradient-to-b from-white to-secondary-50 border-e border-gray-200 shadow-xl z-30">
       <div className="p-6 border-b border-gray-200 bg-white">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="bg-gradient-to-br from-primary-500 to-primary-600 p-2 rounded-xl shadow-md">
-            <Image
-              src="/images/1.png"
-              alt="Logo"
-              width={40}
-              height={40}
-              className="w-10 h-10 object-contain"
-            />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-800">{t('brand.name')}</h1>
-            <p className="text-xs text-primary-600 font-semibold">{t('brand.bank')}</p>
-          </div>
+        <div className="mb-3">
+          <h1 className="text-lg font-bold text-gray-800">{t('brand.name')}</h1>
         </div>
       </div>
 

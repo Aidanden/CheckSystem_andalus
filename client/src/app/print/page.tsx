@@ -213,7 +213,18 @@ export default function PrintPage() {
         return;
       }
 
-      const htmlContent = renderCheckbookHtml(checkbookPreview);
+      // جلب إعدادات الطباعة الحالية (طريقة الشيت/الشيك) مباشرة قبل الطباعة
+      const accountType = resolveAccountType(soapData) as 1 | 2 | 3;
+      let printMode: 'single' | 'sheet3' = layout?.printMode === 'sheet3' ? 'sheet3' : 'single';
+      try {
+        const freshLayout = await printSettingsAPI.getSettings(accountType);
+        printMode = freshLayout.printMode === 'sheet3' ? 'sheet3' : 'single';
+        setLayout(freshLayout);
+      } catch (layoutError) {
+        console.warn('Could not refresh print settings before print:', layoutError);
+      }
+
+      const htmlContent = renderCheckbookHtml(checkbookPreview, { printMode });
       const printWindow = window.open('', '_blank', 'width=1024,height=768');
       if (!printWindow) {
         throw new Error(t('print.printWindowFailed'));

@@ -8,6 +8,8 @@
     "build": "prisma generate && tsc",
     "start": "node dist/index.js",
     "soap:test": "node server_soap_test.js",
+    "soap:test:en": "node server_soap_test_en.js",
+    "soap:endpoint:local": "node set-soap-endpoint.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",

@@ -219,8 +219,17 @@ export default function PrintLogsPage() {
         return;
       }
 
-      // طباعة بعد نجاح الخصم/التسجيل
-      const htmlContent = renderCheckbookHtml(preview);
+      // طباعة بعد نجاح الخصم/التسجيل — جلب طريقة الطباعة الحالية من الإعدادات
+      let printMode: 'single' | 'sheet3' =
+        resolvedLayout?.printMode === 'sheet3' ? 'sheet3' : 'single';
+      try {
+        const freshLayout = await printSettingsAPI.getSettings(accountType);
+        printMode = freshLayout.printMode === 'sheet3' ? 'sheet3' : 'single';
+      } catch {
+        // keep previous printMode
+      }
+
+      const htmlContent = renderCheckbookHtml(preview, { printMode });
       const printWindow = window.open('', '_blank', 'width=1024,height=768');
       if (!printWindow) {
         throw new Error(t('printLogs.errorOpenPrintWindow'));

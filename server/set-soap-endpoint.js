@@ -2,23 +2,25 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
+/** Local mock FCUBS server (npm run soap:test or soap:test:en) */
+const LOCAL_ENDPOINTS = {
+  soap_api_url: 'http://localhost:8080/FCUBSAccService',
+  soap_ia_api_url: 'http://localhost:8080/FCUBSIAService',
+};
+
 async function setSoapEndpoint() {
   try {
-    // رابط SOAP الصحيح للبنك
-    const soapEndpoint = 'http://localhost:5050:8080/FCUBSAccService';
-
-    const result = await prisma.systemSetting.upsert({
-      where: { key: 'soap_api_url' },
-      update: { value: soapEndpoint },
-      create: {
-        key: 'soap_api_url',
-        value: soapEndpoint
-      }
-    });
-
-    console.log('✅ تم تعيين رابط SOAP بنجاح:', result);
+    for (const [key, value] of Object.entries(LOCAL_ENDPOINTS)) {
+      const result = await prisma.systemSetting.upsert({
+        where: { key },
+        update: { value },
+        create: { key, value },
+      });
+      console.log(`✅ ${key}:`, result.value);
+    }
   } catch (error) {
-    console.error('❌ فشل في تعيين رابط SOAP:', error);
+    console.error('❌ Failed to set SOAP endpoints:', error);
+    process.exitCode = 1;
   } finally {
     await prisma.$disconnect();
   }

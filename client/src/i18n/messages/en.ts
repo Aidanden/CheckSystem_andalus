@@ -75,7 +75,7 @@ const en = {
   },
   brand: {
     name: 'Check System',
-    bank: 'Andalus Bank',
+    bank: '',
     fullTitle: 'Check Printing System',
   },
   nav: {
@@ -101,7 +101,7 @@ const en = {
     user: 'User',
   },
   login: {
-    bankName: 'Andalus Bank',
+    bankName: '',
     systemName: 'Check Printing System',
     username: 'Username',
     password: 'Password',
@@ -429,6 +429,13 @@ const en = {
     tabEmployee: 'Employee (10 sheets)',
     checkSpecifications: 'Check Specifications',
     dimensionsMm: 'Dimensions (mm)',
+    printMode: 'Print layout',
+    printModeHint: 'Applies to all account types. Choose one check per page or three checks stacked on one sheet.',
+    printModeSingle: 'Single check',
+    printModeSingleDesc: 'One check per printed page (current size).',
+    printModeSheet: 'Sheet (3 checks)',
+    printModeSheetDesc: 'Three checks stacked vertically on each sheet.',
+    printModeSheetPageSize: 'Sheet page size will be {width} × {height} mm.',
     branchName: 'Branch Name',
     serialNumber: 'Serial Number',
     secondSerialNumber: 'Second Serial Number',

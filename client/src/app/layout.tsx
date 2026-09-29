@@ -4,14 +4,14 @@ import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: 'نظام طباعة الشيكات | Check Printing System',
-  description: 'نظام طباعة شيكات مصرف الأندلس',
+  description: 'نظام طباعة الشيكات',
 };
 
 const localeBootScript = `
 (function(){
   try {
     var locale = localStorage.getItem('check-system-locale');
-    if (locale !== 'ar' && locale !== 'en') locale = 'ar';
+    if (locale !== 'ar' && locale !== 'en') locale = 'en';
     document.documentElement.lang = locale;
     document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
   } catch (e) {}
@@ -24,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
+    <html lang="en" dir="ltr" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: localeBootScript }} />
       </head>
