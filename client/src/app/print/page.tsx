@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Search, Printer, CheckCircle, RefreshCw } from 'lucide-react';
 import renderCheckbookHtml, { type CheckbookData } from '@/lib/utils/printRenderer';
@@ -11,8 +11,10 @@ import {
 } from '@/lib/soap/checkbook';
 import { printSettingsAPI, type PrintSettings } from '@/lib/printSettings.api';
 import { branchService, soapService, printLogService } from '@/lib/api';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 export default function PrintPage() {
+  const { t } = useTranslation();
   const [accountNumber, setAccountNumber] = useState('');
   const [firstChequeNumber, setFirstChequeNumber] = useState('');
   const [soapData, setSoapData] = useState<SoapCheckbookResponse | null>(null);
@@ -50,13 +52,13 @@ export default function PrintPage() {
       // الحصول على معلومات المستخدم الحالي
       const token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('يجب تسجيل الدخول أولاً');
+        throw new Error(t('print.pleaseSignIn'));
       }
 
       // فك تشفير الـ token للحصول على معلومات المستخدم
       const tokenParts = token.split('.');
       if (tokenParts.length !== 3) {
-        throw new Error('رمز المصادقة غير صالح');
+        throw new Error(t('print.invalidToken'));
       }
 
       const payload = JSON.parse(atob(tokenParts[1]));
@@ -69,7 +71,10 @@ export default function PrintPage() {
 
         // التحقق من تطابق رقم الفرع
         if (accountBranchCode !== currentUser.branchNumber) {
-          setError(`❌ هذا الحساب تابع لفرع آخر (${accountBranchCode}). أنت مخول فقط للاستعلام عن حسابات فرع ${currentUser.branchNumber}.`);
+          setError(t('print.otherBranchError', {
+            accountBranch: accountBranchCode,
+            userBranch: currentUser.branchNumber,
+          }));
           setLoading(false);
           return;
         }
@@ -99,7 +104,7 @@ export default function PrintPage() {
       let resolvedRouting = soapResponse.routingNumber;
 
       // استخدام الدالة الجديدة من الـ Backend لجلب بيانات الفرع بناءً على رقم الحساب
-      if (!resolvedBranchName || !resolvedRouting || resolvedBranchName.startsWith('فرع 0')) {
+      if (!resolvedBranchName || !resolvedRouting || resolvedBranchName.startsWith('Branch 0')) {
         try {
           console.log(`🔍 جلب بيانات الفرع من الـ Backend لرقم الحساب: ${accountNumber}`);
           const branch = await branchService.getByAccountNumber(accountNumber);
@@ -116,14 +121,14 @@ export default function PrintPage() {
       }
 
       // قيم افتراضية في حال الفشل التام
-      resolvedBranchName = resolvedBranchName || `فرع ${soapResponse.accountBranch}`;
+      resolvedBranchName = resolvedBranchName || t('print.branchFallback', { code: soapResponse.accountBranch });
       resolvedRouting = resolvedRouting || soapResponse.accountBranch;
 
       setBranchInfo({ name: resolvedBranchName, routing: resolvedRouting });
 
       // تحذير إذا لم يتم العثور على بيانات الفرع الحقيقية
-      if (resolvedRouting === soapResponse.accountBranch || resolvedBranchName.startsWith('فرع 0')) {
-        setError('⚠️ تنبيه: لم يتم العثور على بيانات الفرع (الاسم والرقم التوجيهي) في قاعدة البيانات. سيتم استخدام القيم الافتراضية (رقم الفرع) وهذا قد يؤدي لطباعة خط MICR غير صحيح. يرجى إضافة الفرع في صفحة "إدارة الفروع".');
+      if (resolvedRouting === soapResponse.accountBranch || resolvedBranchName.startsWith('Branch 0')) {
+        setError(t('print.branchDataWarning'));
       }
 
       // التحقق من الشيكات المطبوعة مسبقاً من قاعدة البيانات المحلية
@@ -136,7 +141,7 @@ export default function PrintPage() {
 
         if (printed.length > 0) {
           setAlreadyPrintedCheques(printed);
-          setError('⚠️ تنبيه: هذا الدفتر (أو بعض شيكاته) تمت طباعته مسبقاً. لا يمكن إعادة الطباعة من هنا، يرجى مراجعة سجلات الطباعة.');
+          setError(t('print.alreadyPrintedWarning'));
 
           // تحديث حالة الشيكات في العرض لتظهر كمطبوعة
           soapResponse.chequeStatuses = soapResponse.chequeStatuses.map(s => {
@@ -161,7 +166,7 @@ export default function PrintPage() {
       setCheckbookPreview(preview);
     } catch (err: any) {
       console.error('SOAP query failed:', err);
-      setError(err.message || 'فشل الاستعلام عن دفتر الشيكات عبر SOAP');
+      setError(err.message || t('print.queryFailed'));
     } finally {
       setLoading(false);
     }
@@ -169,13 +174,13 @@ export default function PrintPage() {
 
   const handlePrint = async () => {
     if (!checkbookPreview || !soapData) {
-      setError('لا توجد بيانات جاهزة للطباعة. الرجاء إجراء الاستعلام أولاً.');
+      setError(t('print.noDataReady'));
       return;
     }
 
     // منع الطباعة إذا كانت هناك شيكات مطبوعة مسبقاً
     if (alreadyPrintedCheques.length > 0) {
-      setError('لا يمكن الطباعة! بعض الشيكات تم طباعتها مسبقاً. يمكنك إعادة الطباعة فقط من شاشة السجلات.');
+      setError(t('print.cannotPrint'));
       return;
     }
 
@@ -184,23 +189,9 @@ export default function PrintPage() {
     setSuccess(false);
 
     try {
-      const htmlContent = renderCheckbookHtml(checkbookPreview);
-      const printWindow = window.open('', '_blank', 'width=1024,height=768');
-      if (!printWindow) {
-        throw new Error('تعذّر فتح نافذة الطباعة');
-      }
-
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-
-      setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-      }, 300);
-
-      // تسجيل عملية الطباعة
+      // تسجيل الطباعة وخصم المخزون أولاً — إن فشل لا تُفتح نافذة الطباعة
+      const chequeNumbers = soapData.chequeStatuses.map(s => s.chequeNumber);
       try {
-        const chequeNumbers = soapData.chequeStatuses.map(s => s.chequeNumber);
         await printLogService.create({
           accountNumber: soapData.accountNumber,
           accountBranch: soapData.accountBranch,
@@ -212,11 +203,40 @@ export default function PrintPage() {
           operationType: 'print',
           chequeNumbers,
         });
-        console.log('✅ تم تسجيل عملية الطباعة بنجاح');
-      } catch (logError) {
-        console.error('فشل تسجيل عملية الطباعة:', logError);
-        // لا نوقف العملية، فقط نسجل الخطأ
+      } catch (logError: any) {
+        const inventoryMessage =
+          logError?.response?.data?.error ||
+          logError?.response?.data?.details ||
+          logError?.message ||
+          t('print.inventoryDeductFailed');
+        setError(inventoryMessage);
+        return;
       }
+
+      // جلب إعدادات الطباعة الحالية (طريقة الشيت/الشيك) مباشرة قبل الطباعة
+      const accountType = resolveAccountType(soapData) as 1 | 2 | 3;
+      let printMode: 'single' | 'sheet3' = layout?.printMode === 'sheet3' ? 'sheet3' : 'single';
+      try {
+        const freshLayout = await printSettingsAPI.getSettings(accountType);
+        printMode = freshLayout.printMode === 'sheet3' ? 'sheet3' : 'single';
+        setLayout(freshLayout);
+      } catch (layoutError) {
+        console.warn('Could not refresh print settings before print:', layoutError);
+      }
+
+      const htmlContent = renderCheckbookHtml(checkbookPreview, { printMode });
+      const printWindow = window.open('', '_blank', 'width=1024,height=768');
+      if (!printWindow) {
+        throw new Error(t('print.printWindowFailed'));
+      }
+
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 300);
 
       // Update local state to show "Printed"
       if (soapData) {
@@ -232,7 +252,7 @@ export default function PrintPage() {
       setSuccess(true);
     } catch (err: any) {
       console.error('Print failed:', err);
-      setError(err.message || 'فشل إنشاء صفحة الطباعة');
+      setError(err.message || t('print.printPageFailed'));
     } finally {
       setPrinting(false);
     }
@@ -241,28 +261,28 @@ export default function PrintPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-800">طباعة شيك جديد</h1>
+        <h1 className="text-2xl font-bold text-gray-800">{t('print.title')}</h1>
 
         {/* Search Form */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
-            الاستعلام عن حساب
+            {t('print.queryAccount')}
           </h2>
 
           <form onSubmit={handleQuery} className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1">
-              <label className="block text-sm text-gray-600 mb-1">رقم الحساب</label>
+              <label className="block text-sm text-gray-600 mb-1">{t('print.accountNumber')}</label>
               <input
                 type="text"
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value)}
-                placeholder="أدخل رقم الحساب"
+                placeholder={t('print.accountNumberPlaceholder')}
                 className="input w-full"
                 disabled={loading}
               />
             </div>
             <div className="md:col-span-1">
-              <label className="block text-sm text-gray-600 mb-1">أول رقم شيك </label>
+              <label className="block text-sm text-gray-600 mb-1">{t('print.firstChequeNumber')}</label>
               <input
                 type="number"
                 value={firstChequeNumber}
@@ -282,12 +302,12 @@ export default function PrintPage() {
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    جاري الاتصال...
+                    {t('print.connecting')}
                   </>
                 ) : (
                   <>
                     <Search className="w-5 h-5" />
-                    استعلام
+                    {t('print.query')}
                   </>
                 )}
               </button>
@@ -307,10 +327,10 @@ export default function PrintPage() {
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="w-5 h-5" />
-              <span className="font-semibold">تمت الطباعة بنجاح!</span>
+              <span className="font-semibold">{t('print.printSuccess')}</span>
             </div>
             <p className="text-sm text-green-600">
-              تم فتح صفحة الطباعة في نافذة جديدة. سيتم بدء الطباعة تلقائياً.
+              {t('print.printSuccessHint')}
             </p>
           </div>
         )}
@@ -319,7 +339,7 @@ export default function PrintPage() {
         {soapData && (
           <div className="card">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
-              بيانات الحساب
+              {t('print.accountDetails')}
             </h2>
 
             <div className="space-y-4">
@@ -329,41 +349,41 @@ export default function PrintPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Account Number & Name */}
                     <div className="space-y-1">
-                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">الحساب</p>
+                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">{t('print.account')}</p>
                       <p className="text-2xl font-bold text-gray-800 font-mono tracking-tight">
                         {soapData.accountNumber}
                       </p>
                       <p className="text-sm font-medium text-gray-600">
-                        {soapData.customerName || 'غير متوفر'}
+                        {soapData.customerName || t('print.na')}
                       </p>
                     </div>
 
                     {/* Branch Info */}
                     <div className="space-y-1">
-                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">الفرع</p>
+                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">{t('print.branch')}</p>
                       <p className="text-lg font-semibold text-gray-800">
                         {soapData.accountBranch} {branchInfo && `- ${branchInfo.name}`}
                       </p>
                       {branchInfo && (
                         <p className="text-xs text-gray-500 font-mono">
-                          Route: {branchInfo.routing}
+                          {t('print.route')}: {branchInfo.routing}
                         </p>
                       )}
                     </div>
 
                     {/* Checkbook Status */}
                     <div className="space-y-1">
-                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">تفاصيل الدفتر</p>
+                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">{t('print.bookDetails')}</p>
                       <div className="flex flex-wrap gap-2 text-sm">
                         <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-medium border border-blue-100">
-                          {soapData.chequeLeaves} ورقة
+                          {t('print.sheets', { count: soapData.chequeLeaves ?? 0 })}
                         </span>
                         <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md font-medium border border-purple-100">
-                          {soapData.checkBookType ?? 'غير محدد'}
+                          {soapData.checkBookType ?? t('print.na')}
                         </span>
                       </div>
                       <p className="text-xs text-gray-400 mt-1">
-                        Start: <span className="font-mono text-gray-600">{soapData.firstChequeNumber ?? 'N/A'}</span>
+                        {t('print.start')}: <span className="font-mono text-gray-600">{soapData.firstChequeNumber ?? t('print.na')}</span>
                       </p>
                     </div>
                   </div>
@@ -372,7 +392,7 @@ export default function PrintPage() {
                 {/* Checks Grid */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold text-gray-700">قائمة الشيكات ({soapData.chequeStatuses.length})</h3>
+                    <h3 className="text-sm font-bold text-gray-700">{t('print.chequeList', { count: soapData.chequeStatuses.length })}</h3>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
@@ -389,7 +409,7 @@ export default function PrintPage() {
                             ? 'bg-amber-100 text-amber-700'
                             : 'bg-green-100 text-green-700'
                             }`}>
-                            {status.status === 'U' ? 'مطبوع' : 'جديد'}
+                            {status.status === 'U' ? t('print.printed') : t('print.newStatus')}
                           </span>
                           <Printer className={`w-3 h-3 ${status.status === 'U' ? 'text-amber-400' : 'text-gray-300'}`} />
                         </div>
@@ -399,7 +419,7 @@ export default function PrintPage() {
                             {status.chequeNumber}
                           </p>
                           <p className="text-[10px] text-gray-500 mt-0.5">
-                            Book: {status.chequeBookNumber}
+                            {t('print.book')}: {status.chequeBookNumber}
                           </p>
                         </div>
                       </div>
@@ -416,18 +436,18 @@ export default function PrintPage() {
                     {printing ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        جاري الطباعة...
+                        {t('print.printing')}
                       </>
                     ) : (
                       <>
                         <Printer className="w-5 h-5" />
-                        طباعة دفتر الشيكات 
+                        {t('print.printCheckbook')}
                       </>
                     )}
                   </button>
 
                   <p className="text-xs text-gray-500 text-center mt-2">
-                    سيتم استخدام البيانات المستلمة من FLEXCUBE المباشرة للطباعة
+                    {t('print.flexcubeNote')}
                   </p>
                   <button
                     onClick={() => {
@@ -443,7 +463,7 @@ export default function PrintPage() {
                     disabled={!soapData}
                   >
                     <RefreshCw className="w-4 h-4" />
-                    إعادة تحميل المعاينة
+                    {t('print.reloadPreview')}
                   </button>
                 </div>
               </div>
@@ -455,10 +475,10 @@ export default function PrintPage() {
         {!soapData && !error && (
           <div className="card bg-blue-50 border border-blue-200">
             <h3 className="font-semibold text-blue-900 mb-2">
-              تعليمات الاستعلام:
+              {t('print.queryInstructions')}
             </h3>
             <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-              <li>ضع رقم الحساب و رقم بداية الطباعة لدفتر الشيكات الذي تم طلبه عبر المنظومة المصرفية</li>
+              <li>{t('print.queryInstructionsText')}</li>
             </ul>
           </div>
         )}
@@ -466,4 +486,3 @@ export default function PrintPage() {
     </DashboardLayout>
   );
 }
-

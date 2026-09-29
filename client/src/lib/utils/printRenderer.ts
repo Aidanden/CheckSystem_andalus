@@ -57,6 +57,15 @@ export interface CheckbookData {
   checks: CheckData[];
 }
 
+/** single = 1 check per page; sheet3 = 3 checks stacked on one physical sheet */
+export type PrintMode = 'single' | 'sheet3';
+
+export const CHECKS_PER_SHEET = 3;
+
+export interface RenderCheckbookOptions {
+  printMode?: PrintMode;
+}
+
 const escapeHtml = (value: string) =>
   value
     .replace(/&/g, '&amp;')
@@ -65,11 +74,7 @@ const escapeHtml = (value: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-const MICR_TRANSIT = '⑆';
-const MICR_ON_US = '⑈';
-
 const reorderMicrLine = (value: string) => {
-  // Return the MICR line as-is, trusting the generator to format it correctly.
   return value;
 };
 
@@ -84,8 +89,15 @@ const transformForAlign = (align: 'left' | 'center' | 'right' = 'left') => {
   }
 };
 
+function chunkChecks<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
 function renderCheckSection(check: CheckData): string {
-  // استخدام mm مباشرة للطباعة الدقيقة
   const widthMm = check.checkSize.width;
   const heightMm = check.checkSize.height;
 
@@ -96,26 +108,24 @@ function renderCheckSection(check: CheckData): string {
   const accountAlign = check.accountHolderNameAlign ?? 'left';
   const micrAlign = check.micrLineAlign ?? 'center';
 
-  // المواقع بالمليمتر
   const branchX = check.branchNameX ?? 20;
   const branchY = check.branchNameY ?? 10;
 
-  const accountNumX = check.accountNumberX ?? (widthMm / 2);
+  const accountNumX = check.accountNumberX ?? widthMm / 2;
   const accountNumY = check.accountNumberY ?? 10;
 
-  const serialX = check.serialNumberX ?? (widthMm - 20);
+  const serialX = check.serialNumberX ?? widthMm - 20;
   const serialY = check.serialNumberY ?? 18;
 
   const checkSeqX = check.checkSequenceX ?? 20;
   const checkSeqY = check.checkSequenceY ?? 18;
 
   const accountX = check.accountHolderNameX ?? 15;
-  const accountY = check.accountHolderNameY ?? (heightMm - 20);
+  const accountY = check.accountHolderNameY ?? heightMm - 20;
 
-  const micrX = check.micrLineX ?? (widthMm / 2);
-  const micrY = check.micrLineY ?? (heightMm - 5);
+  const micrX = check.micrLineX ?? widthMm / 2;
+  const micrY = check.micrLineY ?? heightMm - 5;
 
-  // أحجام الخطوط بالنقاط (pt)
   const branchFont = check.branchNameFontSize ?? 14;
   const accountNumFont = check.accountNumberFontSize ?? 14;
   const serialFont = check.serialNumberFontSize ?? 12;
@@ -150,53 +160,101 @@ function renderCheckSection(check: CheckData): string {
   `;
 }
 
-export default function renderCheckbookHtml(checkbookData: CheckbookData): string {
-  if (typeof window === 'undefined') {
-    throw new Error('لا يمكن إنشاء صفحة الطباعة خارج بيئة المتصفح');
+function buildBodyHtml(validChecks: CheckData[], printMode: PrintMode): string {
+  if (printMode !== 'sheet3') {
+    return validChecks.map(renderCheckSection).join('\n');
   }
 
-  const micrFontUrl = new URL('/font/micrenc.ttf', window.location.origin).toString();
-  
-  // تصفية الشيكات الفارغة أو غير الصالحة قبل المعالجة
-  // التأكد من أن الشيك يحتوي على serialNumber صالح و accountNumber
-  const validChecks = checkbookData.checks.filter(
-    check => {
-      if (!check) return false;
-      if (!check.serialNumber || check.serialNumber.trim() === '') return false;
-      if (!check.accountNumber || check.accountNumber.trim() === '') return false;
-      // التأكد من أن serialNumber هو رقم صالح
-      const serialNum = parseInt(check.serialNumber, 10);
-      if (isNaN(serialNum) || serialNum <= 0) return false;
-      return true;
-    }
-  );
-  
-  if (validChecks.length === 0) {
-    throw new Error('لا توجد شيكات صالحة للطباعة');
+  const sheets = chunkChecks(validChecks, CHECKS_PER_SHEET);
+  return sheets
+    .map(
+      (sheetChecks) => `
+    <div class="sheet">
+      ${sheetChecks.map(renderCheckSection).join('\n')}
+    </div>`
+    )
+    .join('\n');
+}
+
+export default function renderCheckbookHtml(
+  checkbookData: CheckbookData,
+  options: RenderCheckbookOptions = {}
+): string {
+  if (typeof window === 'undefined') {
+    throw new Error('Print page cannot be created outside browser environment');
   }
-  
+
+  const printMode: PrintMode = options.printMode === 'sheet3' ? 'sheet3' : 'single';
+  const micrFontUrl = new URL('/font/micrenc.ttf', window.location.origin).toString();
+
+  const validChecks = checkbookData.checks.filter((check) => {
+    if (!check) return false;
+    if (!check.serialNumber || check.serialNumber.trim() === '') return false;
+    if (!check.accountNumber || check.accountNumber.trim() === '') return false;
+    const serialNum = parseInt(check.serialNumber, 10);
+    if (isNaN(serialNum) || serialNum <= 0) return false;
+    return true;
+  });
+
+  if (validChecks.length === 0) {
+    throw new Error('No valid checks to print');
+  }
+
   const firstCheck = validChecks[0];
   const defaultWidthMm = firstCheck?.checkSize.width ?? 235;
   const defaultHeightMm = firstCheck?.checkSize.height ?? 86;
+  const pageWidthMm = defaultWidthMm;
+  const pageHeightMm =
+    printMode === 'sheet3' ? defaultHeightMm * CHECKS_PER_SHEET : defaultHeightMm;
 
-  const checksHtml = validChecks.map(renderCheckSection).join('\n');
+  const bodyHtml = buildBodyHtml(validChecks, printMode);
+
+  const singleBreakCss = `
+    .check-wrapper:not(:last-child) {
+      page-break-after: always;
+    }
+    .check-wrapper:last-child {
+      page-break-after: avoid !important;
+      page-break-inside: avoid;
+    }
+  `;
+
+  const sheetBreakCss = `
+    .sheet {
+      width: ${pageWidthMm}mm;
+      height: ${pageHeightMm}mm;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
+    .sheet:not(:last-child) {
+      page-break-after: always;
+    }
+    .sheet:last-child {
+      page-break-after: avoid !important;
+    }
+    .sheet .check-wrapper {
+      page-break-after: avoid !important;
+      page-break-inside: avoid;
+    }
+  `;
 
   return `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>طباعة دفتر الشيكات</title>
+  <title>Checkbook Print</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     @page {
-      size: ${defaultWidthMm}mm ${defaultHeightMm}mm;
+      size: ${pageWidthMm}mm ${pageHeightMm}mm;
       margin: 0;
     }
 
-    /* منع الصفحات الفارغة في النهاية */
     @page :blank {
       display: none;
     }
@@ -232,16 +290,7 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
       overflow: hidden;
     }
 
-    /* إضافة page-break فقط للشيكات التي ليست الأخيرة */
-    .check-wrapper:not(:last-child) {
-      page-break-after: always;
-    }
-
-    /* إزالة page-break من آخر شيك بشكل صريح */
-    .check-wrapper:last-child {
-      page-break-after: avoid !important;
-      page-break-inside: avoid;
-    }
+    ${printMode === 'sheet3' ? sheetBreakCss : singleBreakCss}
 
     .check {
       position: relative;
@@ -291,11 +340,10 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
         padding: 0;
         width: auto;
         height: auto;
-        /* منع الصفحات الفارغة */
         orphans: 0;
         widows: 0;
       }
-      
+
       .check-wrapper {
         width: ${defaultWidthMm}mm;
         height: ${defaultHeightMm}mm;
@@ -304,17 +352,8 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
         page-break-inside: avoid;
       }
 
-      /* إضافة page-break فقط للشيكات التي ليست الأخيرة */
-      .check-wrapper:not(:last-child) {
-        page-break-after: always;
-      }
+      ${printMode === 'sheet3' ? sheetBreakCss : singleBreakCss}
 
-      /* إزالة page-break من آخر شيك بشكل صريح */
-      .check-wrapper:last-child {
-        page-break-after: avoid !important;
-        page-break-inside: avoid;
-      }
-      
       .check {
         box-shadow: none;
         border: none;
@@ -322,7 +361,7 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
         height: ${defaultHeightMm}mm;
       }
     }
-    
+
     @media screen {
       body {
         display: flex;
@@ -333,17 +372,23 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
         background: #f3f4f6;
         padding: 20px;
       }
-      
-      .check-wrapper {
+
+      .sheet {
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         border: 1px solid #e5e7eb;
+        background: #fff;
+      }
+
+      .check-wrapper {
+        box-shadow: ${printMode === 'sheet3' ? 'none' : '0 4px 6px rgba(0, 0, 0, 0.1)'};
+        border: ${printMode === 'sheet3' ? '1px dashed #d1d5db' : '1px solid #e5e7eb'};
         background: #fff;
       }
     }
   </style>
 </head>
 <body>
-${checksHtml}
+${bodyHtml}
 </body>
 </html>`;
 }

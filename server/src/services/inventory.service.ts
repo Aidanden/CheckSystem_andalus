@@ -41,13 +41,10 @@ export class InventoryService {
     notes?: string
   ): Promise<void> {
     if (quantity <= 0) {
-      throw new Error('Quantity must be positive');
+      throw new Error('الكمية يجب أن تكون أكبر من صفر');
     }
 
-    const success = await InventoryModel.deductStock(stockType, quantity, userId, notes);
-    if (!success) {
-      throw new Error('Insufficient inventory');
-    }
+    await InventoryModel.deductStock(stockType, quantity, userId, notes);
   }
 
   static async getTransactionHistory(

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Settings as SettingsIcon, Save, RotateCcw, Printer, RefreshCw, Eye } from 'lucide-react';
 import { certifiedCheckService } from '@/lib/api';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 interface PrintPosition {
   x: number;
@@ -49,6 +50,7 @@ const DEFAULT_SETTINGS: CertifiedPrintSettings = {
 };
 
 export default function CertifiedCheckSettingsPage() {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<CertifiedPrintSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -68,30 +70,31 @@ export default function CertifiedCheckSettingsPage() {
       if (data) {
         // تحويل البيانات من API إلى تنسيق Settings
         // API يرجع البيانات في تنسيق { micrLine: { x, y, ... }, branchName: { x, y, ... }, ... }
+        const apiData = data as any;
         const settingsData: CertifiedPrintSettings = {
-          checkWidth: data.checkWidth || DEFAULT_SETTINGS.checkWidth,
-          checkHeight: data.checkHeight || DEFAULT_SETTINGS.checkHeight,
+          checkWidth: apiData.checkWidth || DEFAULT_SETTINGS.checkWidth,
+          checkHeight: apiData.checkHeight || DEFAULT_SETTINGS.checkHeight,
           encodingNumber: {
-            x: (data as any).micrLine?.x ?? data.micrLineX ?? DEFAULT_SETTINGS.encodingNumber.x,
-            y: (data as any).micrLine?.y ?? data.micrLineY ?? DEFAULT_SETTINGS.encodingNumber.y,
-            fontSize: (data as any).micrLine?.fontSize ?? data.micrLineFontSize ?? DEFAULT_SETTINGS.encodingNumber.fontSize,
-            align: ((data as any).micrLine?.align ?? data.micrLineAlign ?? DEFAULT_SETTINGS.encodingNumber.align) as 'left' | 'center' | 'right',
+            x: apiData.micrLine?.x ?? apiData.micrLineX ?? DEFAULT_SETTINGS.encodingNumber.x,
+            y: apiData.micrLine?.y ?? apiData.micrLineY ?? DEFAULT_SETTINGS.encodingNumber.y,
+            fontSize: apiData.micrLine?.fontSize ?? apiData.micrLineFontSize ?? DEFAULT_SETTINGS.encodingNumber.fontSize,
+            align: (apiData.micrLine?.align ?? apiData.micrLineAlign ?? DEFAULT_SETTINGS.encodingNumber.align) as 'left' | 'center' | 'right',
           },
           date: {
-            x: (data as any).serialNumber?.x ?? data.serialNumberX ?? DEFAULT_SETTINGS.date.x,
-            y: (data as any).serialNumber?.y ?? data.serialNumberY ?? DEFAULT_SETTINGS.date.y,
-            fontSize: (data as any).serialNumber?.fontSize ?? data.serialNumberFontSize ?? DEFAULT_SETTINGS.date.fontSize,
-            align: ((data as any).serialNumber?.align ?? data.serialNumberAlign ?? DEFAULT_SETTINGS.date.align) as 'left' | 'center' | 'right',
+            x: apiData.serialNumber?.x ?? apiData.serialNumberX ?? DEFAULT_SETTINGS.date.x,
+            y: apiData.serialNumber?.y ?? apiData.serialNumberY ?? DEFAULT_SETTINGS.date.y,
+            fontSize: apiData.serialNumber?.fontSize ?? apiData.serialNumberFontSize ?? DEFAULT_SETTINGS.date.fontSize,
+            align: (apiData.serialNumber?.align ?? apiData.serialNumberAlign ?? DEFAULT_SETTINGS.date.align) as 'left' | 'center' | 'right',
           },
           branchName: {
-            x: (data as any).branchName?.x ?? data.branchNameX ?? DEFAULT_SETTINGS.branchName.x,
-            y: (data as any).branchName?.y ?? data.branchNameY ?? DEFAULT_SETTINGS.branchName.y,
-            fontSize: (data as any).branchName?.fontSize ?? data.branchNameFontSize ?? DEFAULT_SETTINGS.branchName.fontSize,
-            align: ((data as any).branchName?.align ?? data.branchNameAlign ?? DEFAULT_SETTINGS.branchName.align) as 'left' | 'center' | 'right',
+            x: apiData.branchName?.x ?? apiData.branchNameX ?? DEFAULT_SETTINGS.branchName.x,
+            y: apiData.branchName?.y ?? apiData.branchNameY ?? DEFAULT_SETTINGS.branchName.y,
+            fontSize: apiData.branchName?.fontSize ?? apiData.branchNameFontSize ?? DEFAULT_SETTINGS.branchName.fontSize,
+            align: (apiData.branchName?.align ?? apiData.branchNameAlign ?? DEFAULT_SETTINGS.branchName.align) as 'left' | 'center' | 'right',
           },
           beneficiaryName: (() => {
-            const nameX = (data as any).accountHolderName?.x ?? data.accountHolderNameX;
-            const nameY = (data as any).accountHolderName?.y ?? data.accountHolderNameY;
+            const nameX = apiData.accountHolderName?.x ?? apiData.accountHolderNameX;
+            const nameY = apiData.accountHolderName?.y ?? apiData.accountHolderNameY;
             // إذا كانت القيم سالبة كبيرة (خارج الشيك)، لا نعرضها
             if (nameX !== undefined && nameX !== null && nameX < -500) {
               return undefined;
@@ -99,8 +102,8 @@ export default function CertifiedCheckSettingsPage() {
             return {
               x: nameX ?? DEFAULT_SETTINGS.beneficiaryName?.x ?? 20,
               y: nameY ?? DEFAULT_SETTINGS.beneficiaryName?.y ?? 70,
-              fontSize: (data as any).accountHolderName?.fontSize ?? data.accountHolderNameFontSize ?? DEFAULT_SETTINGS.beneficiaryName?.fontSize ?? 10,
-              align: ((data as any).accountHolderName?.align ?? data.accountHolderNameAlign ?? DEFAULT_SETTINGS.beneficiaryName?.align ?? 'left') as 'left' | 'center' | 'right',
+              fontSize: apiData.accountHolderName?.fontSize ?? apiData.accountHolderNameFontSize ?? DEFAULT_SETTINGS.beneficiaryName?.fontSize ?? 10,
+              align: (apiData.accountHolderName?.align ?? apiData.accountHolderNameAlign ?? DEFAULT_SETTINGS.beneficiaryName?.align ?? 'left') as 'left' | 'center' | 'right',
             };
           })(),
           margins: DEFAULT_SETTINGS.margins, // TODO: إضافة دعم للهوامش في API
@@ -154,6 +157,7 @@ export default function CertifiedCheckSettingsPage() {
 
     try {
       await certifiedCheckService.updateSettings({
+        accountType: 4,
         checkWidth: settings.checkWidth,
         checkHeight: settings.checkHeight,
         branchName: settings.branchName,
@@ -281,7 +285,7 @@ export default function CertifiedCheckSettingsPage() {
           <div className="flex items-center gap-3">
             <SettingsIcon className="w-8 h-8 text-blue-600" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">إعدادات طباعة الشيكات المصدقة</h1>
+              <h1 className="text-2xl font-bold text-gray-800">{t('certifiedSettings.title')}</h1>
               <p className="text-gray-600">تخصيص إعدادات الطباعة للشيكات المصدقة</p>
             </div>
           </div>

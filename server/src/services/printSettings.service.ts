@@ -9,6 +9,7 @@ export class PrintSettingsService {
     accountType: number;
     checkWidth: number;
     checkHeight: number;
+    printMode?: string;
     branchName: { x: number; y: number; fontSize: number; align: string };
     serialNumber: { x: number; y: number; fontSize: number; align: string };
     accountNumber: { x: number; y: number; fontSize: number; align: string };
@@ -16,10 +17,12 @@ export class PrintSettingsService {
     accountHolderName: { x: number; y: number; fontSize: number; align: string };
     micrLine: { x: number; y: number; fontSize: number; align: string };
   }) {
+    const printMode = data.printMode === 'sheet3' ? 'sheet3' : 'single';
     const flatData = {
       accountType: data.accountType,
       checkWidth: data.checkWidth,
       checkHeight: data.checkHeight,
+      printMode,
       branchNameX: data.branchName.x,
       branchNameY: data.branchName.y,
       branchNameFontSize: data.branchName.fontSize,
@@ -46,7 +49,12 @@ export class PrintSettingsService {
       micrLineAlign: data.micrLine.align,
     };
 
-    return PrintSettingsModel.upsert(flatData);
+    const saved = await PrintSettingsModel.upsert(flatData);
+
+    // Print layout mode applies to all regular account types
+    await PrintSettingsModel.syncPrintModeForRegularTypes(printMode);
+
+    return saved;
   }
 }
 

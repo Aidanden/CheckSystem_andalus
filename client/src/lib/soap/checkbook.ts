@@ -4,8 +4,8 @@ const DEFAULT_BRANCH = '001';
 
 const padNumber = (value: number, length = 9) => value.toString().padStart(length, '0');
 
-const buildMicrLine = (serial: string, accountNumber: string, routingNumber: string, accountType: 1 | 2) => {
-  const typeCode = accountType === 1 ? '01' : '02';
+const buildMicrLine = (serial: string, accountNumber: string, routingNumber: string, accountType: 1 | 2 | 3) => {
+  const typeCode = accountType === 2 ? '02' : '01';
   // Ensure routing number is full length (8 digits) if possible, otherwise use what is provided
   // User requested full routing number. If it's short (e.g. 001), it might be wrong, but we print what we have.
   // The backend should provide the full routing number.
@@ -147,7 +147,7 @@ export async function querySoapCheckbook(
 
   const detailsNode = doc.getElementsByTagName('Chq-Bk-Details-Full')[0] as Element | undefined;
   if (!detailsNode) {
-    throw new Error('لم يتم العثور على تفاصيل دفتر الشيكات في استجابة SOAP');
+    throw new Error('Checkbook details not found in SOAP response');
   }
 
   const chequeStatuses = parseStatuses(detailsNode);
@@ -215,7 +215,7 @@ export function buildPreviewFromSoap(
     accountType = data.accountNumber.startsWith('2') ? 2 : 1;
   }
   
-  const accountHolderName = options.accountHolderName || data.customerName || 'صاحب الحساب';
+  const accountHolderName = options.accountHolderName || data.customerName || 'Account Holder';
 
   const layout = options.layout;
   const positions = {
@@ -230,7 +230,7 @@ export function buildPreviewFromSoap(
   const checkWidth = layout?.checkWidth ?? DEFAULT_LAYOUT.checkWidth;
   const checkHeight = layout?.checkHeight ?? DEFAULT_LAYOUT.checkHeight;
 
-  const branchLabel = options.branchName ?? `فرع ${data.accountBranch}`;
+  const branchLabel = options.branchName ?? `Branch ${data.accountBranch}`;
   const routingNumber = options.routingNumber ?? data.accountBranch;
 
   // إنشاء الشيكات فقط للشيكات الصالحة

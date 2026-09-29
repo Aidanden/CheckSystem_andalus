@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Settings as SettingsIcon, Save, RotateCcw, Printer, Eye } from 'lucide-react';
 import { certifiedCheckService } from '@/lib/api';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 interface PrintPosition {
     x: number;
@@ -40,6 +41,7 @@ const DEFAULT_SETTINGS: CertifiedPrintSettings = {
 };
 
 export default function CertifiedSettingsPage() {
+  const { t } = useTranslation();
     const [settings, setSettings] = useState<CertifiedPrintSettings>(DEFAULT_SETTINGS);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState('');
@@ -291,7 +293,7 @@ export default function CertifiedSettingsPage() {
                             <SettingsIcon className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-800">إعدادات طباعة الشيك المصدق</h1>
+                            <h1 className="text-2xl font-bold text-gray-800">{t('certifiedSettings.title')}</h1>
                             <p className="text-gray-600">ضبط مواضع الحقول وأحجام الخطوط للشيكات المصدقة</p>
                         </div>
                     </div>

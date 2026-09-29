@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { formatDateMedium, formatNumber } from '@/utils/locale';
+import { formatDateMedium } from '@/utils/locale';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 interface PrintOperation {
   id: number;
@@ -26,6 +27,7 @@ interface ReprintModal {
 }
 
 export default function HistoryPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [operations, setOperations] = useState<PrintOperation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +56,7 @@ export default function HistoryPage() {
 
       const response = await fetch('http://localhost:5050/api/printing/history', {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -65,13 +67,13 @@ export default function HistoryPage() {
       }
 
       if (!response.ok) {
-        throw new Error('Failed to fetch history');
+        throw new Error(t('history.fetchFailed'));
       }
 
       const data = await response.json();
       setOperations(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'حدث خطأ أثناء تحميل السجل');
+      setError(err instanceof Error ? err.message : t('history.loadError'));
     } finally {
       setLoading(false);
     }
@@ -115,7 +117,7 @@ export default function HistoryPage() {
       const response = await fetch('http://localhost:5050/api/printing/print', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -128,17 +130,20 @@ export default function HistoryPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || data.error || 'فشلت إعادة الطباعة');
+        throw new Error(data.message || data.error || t('history.reprintFailed'));
       }
 
-      setSuccess('تمت إعادة الطباعة بنجاح! تم فتح ملف PDF في نافذة جديدة.');
+      setSuccess(t('history.reprintSuccess'));
 
       // Open PDF in new tab for printing (fetch with token, embed and auto-print)
       if (data.pdfPath) {
-        const filename = data.pdfPath.split('\\').pop() || data.pdfPath.split('/').pop();
+        const filename =
+          data.pdfPath.split('\\').pop() || data.pdfPath.split('/').pop();
         const downloadUrl = `http://localhost:5050/api/printing/download/${filename}`;
         try {
-          const res = await fetch(downloadUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+          const res = await fetch(downloadUrl, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
           if (!res.ok) throw new Error('Failed to download PDF');
           const blob = await res.blob();
           const blobUrl = window.URL.createObjectURL(blob);
@@ -156,7 +161,7 @@ export default function HistoryPage() {
         closeReprintModal();
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'حدث خطأ أثناء إعادة الطباعة');
+      setError(err instanceof Error ? err.message : t('history.reprintError'));
     } finally {
       setLoading(false);
     }
@@ -165,19 +170,19 @@ export default function HistoryPage() {
   const downloadPDF = (operation: PrintOperation) => {
     const filename = `checkbook_${operation.accountNumber}_*.pdf`;
     // In a real implementation, you would store the PDF filename in the database
-    alert('سيتم تنفيذ تحميل الملف في النسخة الكاملة');
+    alert(t('history.downloadUnavailable'));
   };
 
   return (
     <DashboardLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">سجل عمليات الطباعة</h1>
+          <h1 className="text-3xl font-bold text-gray-800">{t('history.title')}</h1>
           <button
             onClick={fetchHistory}
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
           >
-            تحديث
+            {t('common.refresh')}
           </button>
         </div>
 
@@ -196,11 +201,11 @@ export default function HistoryPage() {
         {loading && !reprintModal.show ? (
           <div className="text-center py-8">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-            <p className="mt-4 text-gray-600">جاري تحميل السجل...</p>
+            <p className="mt-4 text-gray-600">{t('history.loadingLog')}</p>
           </div>
         ) : operations.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
-            <p className="text-gray-600 text-lg">لا توجد عمليات طباعة سابقة</p>
+            <p className="text-gray-600 text-lg">{t('history.noOperations')}</p>
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -209,28 +214,28 @@ export default function HistoryPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      رقم العملية
+                      {t('history.operationId')}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      رقم الحساب
+                      {t('history.accountNumber')}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      النوع
+                      {t('common.type')}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      التسلسل من-إلى
+                      {t('history.serialFromTo')}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      عدد الأوراق
+                      {t('history.sheets')}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      التاريخ
+                      {t('common.date')}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      الحالة
+                      {t('common.status')}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      الإجراءات
+                      {t('common.actions')}
                     </th>
                   </tr>
                 </thead>
@@ -240,25 +245,31 @@ export default function HistoryPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         #{operation.id}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900" dir="ltr">
+                      <td
+                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                        dir="ltr"
+                      >
                         {operation.accountNumber}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {operation.accountType === 1 ? (
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                            فردي
+                            {t('history.individual')}
                           </span>
                         ) : (
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
-                            شركة
+                            {t('history.corporate')}
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900" dir="ltr">
+                      <td
+                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                        dir="ltr"
+                      >
                         {operation.serialFrom} - {operation.serialTo}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {operation.sheetsPrinted} ورقة
+                        {t('history.sheetsCount', { count: operation.sheetsPrinted })}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatDateMedium(operation.printDate)}
@@ -273,7 +284,7 @@ export default function HistoryPage() {
                           onClick={() => openReprintModal(operation)}
                           className="text-blue-600 hover:text-blue-900 ml-2"
                         >
-                          إعادة طباعة
+                          {t('history.reprint')}
                         </button>
                       </td>
                     </tr>
@@ -290,13 +301,13 @@ export default function HistoryPage() {
             <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
               <div className="mt-3">
                 <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                  إعادة طباعة دفتر الشيكات
+                  {t('history.reprintTitle')}
                 </h3>
 
                 <div className="mt-2 space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      رقم الحساب
+                      {t('history.accountNumber')}
                     </label>
                     <input
                       type="text"
@@ -309,11 +320,15 @@ export default function HistoryPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      النوع
+                      {t('common.type')}
                     </label>
                     <input
                       type="text"
-                      value={reprintModal.operation.accountType === 1 ? 'فردي' : 'شركة'}
+                      value={
+                        reprintModal.operation.accountType === 1
+                          ? t('history.individual')
+                          : t('history.corporate')
+                      }
                       disabled
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
                     />
@@ -322,15 +337,17 @@ export default function HistoryPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        التسلسل من
+                        {t('history.serialFrom')}
                       </label>
                       <input
                         type="number"
                         value={reprintModal.serialFrom}
-                        onChange={(e) => setReprintModal({
-                          ...reprintModal,
-                          serialFrom: parseInt(e.target.value) || 0
-                        })}
+                        onChange={(e) =>
+                          setReprintModal({
+                            ...reprintModal,
+                            serialFrom: parseInt(e.target.value) || 0,
+                          })
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                         min="1"
                       />
@@ -338,15 +355,17 @@ export default function HistoryPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        التسلسل إلى
+                        {t('history.serialTo')}
                       </label>
                       <input
                         type="number"
                         value={reprintModal.serialTo}
-                        onChange={(e) => setReprintModal({
-                          ...reprintModal,
-                          serialTo: parseInt(e.target.value) || 0
-                        })}
+                        onChange={(e) =>
+                          setReprintModal({
+                            ...reprintModal,
+                            serialTo: parseInt(e.target.value) || 0,
+                          })
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                         min="1"
                       />
@@ -355,8 +374,11 @@ export default function HistoryPage() {
 
                   <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
                     <p className="text-sm text-yellow-800">
-                      <strong>ملاحظة:</strong> سيتم طباعة {reprintModal.serialTo - reprintModal.serialFrom + 1} ورقة
-                      (الحد الأقصى: {reprintModal.operation.accountType === 1 ? 25 : 50} ورقة)
+                      {t('history.reprintNote', {
+                        count:
+                          reprintModal.serialTo - reprintModal.serialFrom + 1,
+                        max: reprintModal.operation.accountType === 1 ? 25 : 50,
+                      })}
                     </p>
                   </div>
 
@@ -379,14 +401,14 @@ export default function HistoryPage() {
                     disabled={loading}
                     className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md disabled:bg-gray-400"
                   >
-                    {loading ? 'جاري الطباعة...' : 'طباعة'}
+                    {loading ? t('common.printing') : t('common.print')}
                   </button>
                   <button
                     onClick={closeReprintModal}
                     disabled={loading}
                     className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md"
                   >
-                    إلغاء
+                    {t('common.cancel')}
                   </button>
                 </div>
               </div>
@@ -397,4 +419,3 @@ export default function HistoryPage() {
     </DashboardLayout>
   );
 }
-

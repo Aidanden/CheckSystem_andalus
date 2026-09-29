@@ -6,8 +6,10 @@ import { userService, branchService } from '@/lib/api';
 import { User, Branch, Permission, CreateUserRequest } from '@/types';
 import { useAppSelector } from '@/store/hooks';
 import { UserPlus, Edit2, Trash2 } from 'lucide-react';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 export default function UsersPage() {
+  const { t } = useTranslation();
   const { user: currentUser } = useAppSelector((state) => state.auth);
   const [users, setUsers] = useState<User[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -26,7 +28,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (!currentUser?.isAdmin) {
-      alert('ليس لديك صلاحية الوصول لهذه الصفحة');
+      alert(t('common.accessDenied'));
       window.location.href = '/dashboard';
       return;
     }
@@ -56,7 +58,7 @@ export default function UsersPage() {
 
     try {
       if (!formData.is_admin && !formData.branch_id) {
-        alert('يجب اختيار فرع للمستخدم العادي');
+        alert(t('users.mustSelectBranch'));
         return;
       }
 
@@ -83,7 +85,7 @@ export default function UsersPage() {
       });
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'فشل في حفظ المستخدم');
+      alert(error.response?.data?.error || t('users.saveFailed'));
     }
   };
 
@@ -100,13 +102,13 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (userId: number) => {
-    if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+    if (!confirm(t('users.deleteConfirm'))) return;
 
     try {
       await userService.delete(userId);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'فشل في حذف المستخدم');
+      alert(error.response?.data?.error || t('users.deleteFailed'));
     }
   };
 
@@ -124,7 +126,7 @@ export default function UsersPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">إدارة المستخدمين</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{t('users.title')}</h1>
           <button
             onClick={() => {
               setEditingUser(null);
@@ -140,7 +142,7 @@ export default function UsersPage() {
             className="btn btn-primary flex items-center gap-2"
           >
             <UserPlus className="w-5 h-5" />
-            إضافة مستخدم
+            {t('users.addUser')}
           </button>
         </div>
 
@@ -151,22 +153,22 @@ export default function UsersPage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    اسم المستخدم
+                    {t('users.username')}
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    الفرع
+                    {t('users.branch')}
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    الصلاحيات
+                    {t('users.permissions')}
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    النوع
+                    {t('common.type')}
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    الحالة
+                    {t('common.status')}
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
-                    إجراءات
+                    {t('common.actions')}
                   </th>
                 </tr>
               </thead>
@@ -175,7 +177,7 @@ export default function UsersPage() {
                   <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-sm font-medium">{user.username}</td>
                     <td className="py-3 px-4 text-sm">
-                      {user.branch?.branchName || 'غير محدد'}
+                      {user.branch?.branchName || t('common.notSet')}
                     </td>
                     <td className="py-3 px-4 text-sm">
                       <div className="flex flex-wrap gap-1">
@@ -201,7 +203,7 @@ export default function UsersPage() {
                           : 'bg-gray-100 text-gray-700'
                           }`}
                       >
-                        {user.isAdmin ? 'مسؤول' : 'مستخدم'}
+                        {user.isAdmin ? t('users.admin') : t('users.user')}
                       </span>
                     </td>
                     <td className="py-3 px-4">
@@ -211,7 +213,7 @@ export default function UsersPage() {
                           : 'bg-red-100 text-red-700'
                           }`}
                       >
-                        {user.isActive ? 'نشط' : 'معطل'}
+                        {user.isActive ? t('common.active') : t('common.inactive')}
                       </span>
                     </td>
                     <td className="py-3 px-4">
@@ -244,13 +246,13 @@ export default function UsersPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
           <div className="card max-w-2xl w-full mx-4 my-8">
             <h2 className="text-xl font-bold text-gray-800 mb-4">
-              {editingUser ? 'تعديل مستخدم' : 'إضافة مستخدم جديد'}
+              {editingUser ? t('users.editUser') : t('users.addNewUser')}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  اسم المستخدم
+                  {t('users.username')}
                 </label>
                 <input
                   type="text"
@@ -263,7 +265,8 @@ export default function UsersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  كلمة المرور {editingUser && '(اتركه فارغاً إذا لم ترد تغييره)'}
+                  {t('users.password')}{' '}
+                  {editingUser && t('users.passwordLeaveBlank')}
                 </label>
                 <input
                   type="password"
@@ -276,7 +279,7 @@ export default function UsersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  الفرع
+                  {t('users.branch')}
                 </label>
                 <select
                   value={formData.branch_id || ''}
@@ -289,8 +292,14 @@ export default function UsersPage() {
                   className="input"
                   required={!formData.is_admin}
                 >
-                  {formData.is_admin && <option value="">بدون فرع (صلاحية كاملة)</option>}
-                  {!formData.is_admin && <option value="" disabled>اختر الفرع...</option>}
+                  {formData.is_admin && (
+                    <option value="">{t('users.noBranchFullAccess')}</option>
+                  )}
+                  {!formData.is_admin && (
+                    <option value="" disabled>
+                      {t('users.selectBranch')}
+                    </option>
+                  )}
                   {branches.map((branch) => (
                     <option key={branch.id} value={branch.id}>
                       {branch.branchName}
@@ -308,42 +317,63 @@ export default function UsersPage() {
                   className="rounded"
                 />
                 <label htmlFor="is_admin" className="text-sm font-medium text-gray-700">
-                  مسؤول (صلاحيات كاملة)
+                  {t('users.adminFullPermissions')}
                 </label>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 border-b pb-2">
-                  الصلاحيات حسب المجموعات
+                  {t('users.permissionsByGroup')}
                 </label>
                 <div className="space-y-6 max-h-[400px] overflow-y-auto p-2 pr-4 border rounded-xl bg-gray-50/30">
                   {[
                     {
-                      name: 'طباعة الشيك المصدق (أفراد)',
-                      codes: ['SCREEN_CERTIFIED_PRINT', 'SCREEN_CERTIFIED_REPORTS', 'REPRINT_CERTIFIED']
+                      nameKey: 'users.groupCertifiedPrint' as const,
+                      codes: [
+                        'SCREEN_CERTIFIED_PRINT',
+                        'SCREEN_CERTIFIED_REPORTS',
+                        'REPRINT_CERTIFIED',
+                      ],
                     },
                     {
-                      name: 'طباعة دفاتر المصدقة',
-                      codes: ['SCREEN_CERTIFIED_BOOKS', 'SCREEN_CERTIFIED_LOGS', 'CERTIFIED_INVENTORY_MANAGEMENT']
+                      nameKey: 'users.groupCertifiedBooks' as const,
+                      codes: [
+                        'SCREEN_CERTIFIED_BOOKS',
+                        'SCREEN_CERTIFIED_LOGS',
+                        'CERTIFIED_INVENTORY_MANAGEMENT',
+                      ],
                     },
                     {
-                      name: 'شيكات الأفراد والشركات',
-                      codes: ['SCREEN_PRINT', 'SCREEN_PRINT_LOGS', 'INVENTORY_MANAGEMENT', 'REPRINT']
+                      nameKey: 'users.groupIndividualCorporate' as const,
+                      codes: [
+                        'SCREEN_PRINT',
+                        'SCREEN_PRINT_LOGS',
+                        'INVENTORY_MANAGEMENT',
+                        'REPRINT',
+                      ],
                     },
                     {
-                      name: 'إدارة النظام والتقارير العامة',
-                      codes: ['MANAGE_USERS', 'MANAGE_BRANCHES', 'SYSTEM_SETTINGS', 'SCREEN_REPORTS']
-                    }
+                      nameKey: 'users.groupSystemManagement' as const,
+                      codes: [
+                        'MANAGE_USERS',
+                        'MANAGE_BRANCHES',
+                        'SYSTEM_SETTINGS',
+                        'SCREEN_REPORTS',
+                      ],
+                    },
                   ].map((group) => (
-                    <div key={group.name} className="space-y-2">
+                    <div key={group.nameKey} className="space-y-2">
                       <h3 className="text-xs font-bold text-primary-600 bg-primary-50 px-2 py-1 rounded inline-block">
-                        {group.name}
+                        {t(group.nameKey)}
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {permissions
-                          .filter(p => group.codes.includes(p.permissionCode))
+                          .filter((p) => group.codes.includes(p.permissionCode))
                           .map((perm) => (
-                            <label key={perm.id} className="flex items-start gap-2 cursor-pointer p-2 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 rounded-lg transition-all group">
+                            <label
+                              key={perm.id}
+                              className="flex items-start gap-2 cursor-pointer p-2 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 rounded-lg transition-all group"
+                            >
                               <input
                                 type="checkbox"
                                 checked={formData.permission_ids.includes(perm.id)}
@@ -351,7 +381,10 @@ export default function UsersPage() {
                                   if (e.target.checked) {
                                     setFormData({
                                       ...formData,
-                                      permission_ids: [...formData.permission_ids, perm.id],
+                                      permission_ids: [
+                                        ...formData.permission_ids,
+                                        perm.id,
+                                      ],
                                     });
                                   } else {
                                     setFormData({
@@ -365,9 +398,13 @@ export default function UsersPage() {
                                 className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                               />
                               <div>
-                                <span className="text-sm font-semibold block text-gray-800 group-hover:text-primary-700">{perm.permissionName}</span>
+                                <span className="text-sm font-semibold block text-gray-800 group-hover:text-primary-700">
+                                  {perm.permissionName}
+                                </span>
                                 {perm.description && (
-                                  <span className="text-[10px] text-gray-500 block leading-tight">{perm.description}</span>
+                                  <span className="text-[10px] text-gray-500 block leading-tight">
+                                    {perm.description}
+                                  </span>
                                 )}
                               </div>
                             </label>
@@ -380,7 +417,7 @@ export default function UsersPage() {
 
               <div className="flex gap-3 pt-4">
                 <button type="submit" className="flex-1 btn btn-primary">
-                  حفظ
+                  {t('common.save')}
                 </button>
                 <button
                   type="button"
@@ -390,7 +427,7 @@ export default function UsersPage() {
                   }}
                   className="flex-1 btn btn-secondary"
                 >
-                  إلغاء
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>
@@ -400,4 +437,3 @@ export default function UsersPage() {
     </DashboardLayout>
   );
 }
-

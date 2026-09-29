@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Settings as SettingsIcon, Save, RotateCcw, Printer, RefreshCw } from 'lucide-react';
 import { systemSettingsService } from '@/lib/api';
 import renderCheckbookHtml from '@/lib/utils/printRenderer';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 interface PrintPosition {
   x: number;
@@ -18,6 +19,7 @@ interface PrintSettings {
   accountType: 1 | 2 | 3 | 4;
   checkWidth: number;
   checkHeight: number;
+  printMode: 'single' | 'sheet3';
   branchName: PrintPosition;
   serialNumber: PrintPosition;
   accountNumber: PrintPosition | null;
@@ -30,6 +32,7 @@ const DEFAULT_INDIVIDUAL: PrintSettings = {
   accountType: 1,
   checkWidth: 235,
   checkHeight: 86,
+  printMode: 'single',
   branchName: { x: 20, y: 10, fontSize: 14, align: 'left' },
   serialNumber: { x: 200, y: 18, fontSize: 12, align: 'right' },
   accountNumber: { x: 117.5, y: 10, fontSize: 14, align: 'center' },
@@ -42,6 +45,7 @@ const DEFAULT_CORPORATE: PrintSettings = {
   accountType: 2,
   checkWidth: 240,
   checkHeight: 86,
+  printMode: 'single',
   branchName: { x: 20, y: 10, fontSize: 14, align: 'left' },
   serialNumber: { x: 205, y: 18, fontSize: 12, align: 'right' },
   accountNumber: { x: 120, y: 10, fontSize: 14, align: 'center' },
@@ -54,15 +58,17 @@ const DEFAULT_BANK_STAFF: PrintSettings = {
   accountType: 3,
   checkWidth: 235,
   checkHeight: 86,
+  printMode: 'single',
   branchName: { ...DEFAULT_INDIVIDUAL.branchName },
   serialNumber: { ...DEFAULT_INDIVIDUAL.serialNumber },
-  accountNumber: { ...DEFAULT_INDIVIDUAL.accountNumber },
+  accountNumber: DEFAULT_INDIVIDUAL.accountNumber ? { ...DEFAULT_INDIVIDUAL.accountNumber } : null,
   checkSequence: { ...DEFAULT_INDIVIDUAL.checkSequence },
   accountHolderName: { ...DEFAULT_INDIVIDUAL.accountHolderName },
   micrLine: { ...DEFAULT_INDIVIDUAL.micrLine },
 };
 
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<1 | 2 | 3>(1);
   const [individualSettings, setIndividualSettings] = useState<PrintSettings>(DEFAULT_INDIVIDUAL);
   const [corporateSettings, setCorporateSettings] = useState<PrintSettings>(DEFAULT_CORPORATE);
@@ -90,7 +96,7 @@ export default function SettingsPage() {
   const handleSoapEndpointSave = async () => {
     const value = soapApiEndpoint.trim();
     if (!value) {
-      setSoapApiMessage({ type: 'error', text: 'الرجاء إدخال رابط SOAP صالح.' });
+      setSoapApiMessage({ type: 'error', text: t('settings.enterValidSoapUrl') });
       return;
     }
 
@@ -99,10 +105,10 @@ export default function SettingsPage() {
     try {
       const { endpoint } = await systemSettingsService.updateSoapEndpoint(value);
       setSoapApiEndpoint(endpoint);
-      setSoapApiMessage({ type: 'success', text: 'تم حفظ رابط SOAP بنجاح.' });
+      setSoapApiMessage({ type: 'success', text: t('settings.soapUrlSaved') });
     } catch (err: any) {
       const apiError = err?.response?.data?.error;
-      setSoapApiMessage({ type: 'error', text: apiError || 'فشل في حفظ رابط SOAP.' });
+      setSoapApiMessage({ type: 'error', text: apiError || t('settings.failedSaveSoapUrl') });
     } finally {
       setSoapApiSaving(false);
     }
@@ -111,7 +117,7 @@ export default function SettingsPage() {
   const handleSoapIAEndpointSave = async () => {
     const value = soapIAEndpoint.trim();
     if (!value) {
-      setSoapIAApiMessage({ type: 'error', text: 'الرجاء إدخال رابط SOAP IA صالح.' });
+      setSoapIAApiMessage({ type: 'error', text: t('settings.enterValidSoapIaUrl') });
       return;
     }
 
@@ -120,10 +126,10 @@ export default function SettingsPage() {
     try {
       const { endpoint } = await systemSettingsService.updateSoapIAEndpoint(value);
       setSoapIAEndpoint(endpoint);
-      setSoapIAApiMessage({ type: 'success', text: 'تم حفظ رابط SOAP IA بنجاح.' });
+      setSoapIAApiMessage({ type: 'success', text: t('settings.soapIaUrlSaved') });
     } catch (err: any) {
       const apiError = err?.response?.data?.error;
-      setSoapIAApiMessage({ type: 'error', text: apiError || 'فشل في حفظ رابط SOAP IA.' });
+      setSoapIAApiMessage({ type: 'error', text: apiError || t('settings.failedSaveSoapIaUrl') });
     } finally {
       setSoapIAApiSaving(false);
     }
@@ -149,7 +155,7 @@ export default function SettingsPage() {
       setSoapApiEndpoint(endpoint);
     } catch (err) {
       console.error('فشل تحميل رابط SOAP:', err);
-      setSoapApiMessage({ type: 'error', text: 'تعذر تحميل رابط SOAP الحالي، سيتم استخدام القيمة الافتراضية.' });
+      setSoapApiMessage({ type: 'error', text: t('settings.couldNotLoadSoapUrl') });
     } finally {
       setSoapApiLoading(false);
     }
@@ -163,7 +169,7 @@ export default function SettingsPage() {
       setSoapIAEndpoint(endpoint);
     } catch (err) {
       console.error('فشل تحميل رابط SOAP IA:', err);
-      setSoapIAApiMessage({ type: 'error', text: 'تعذر تحميل رابط SOAP IA الحالي، سيتم استخدام القيمة الافتراضية.' });
+      setSoapIAApiMessage({ type: 'error', text: t('settings.couldNotLoadSoapIaUrl') });
     } finally {
       setSoapIAApiLoading(false);
     }
@@ -194,12 +200,16 @@ export default function SettingsPage() {
 
       if (response.ok) {
         const data = await response.json();
+        const normalized = {
+          ...data,
+          printMode: data.printMode === 'sheet3' ? 'sheet3' : 'single',
+        };
         if (activeTab === 1) {
-          setIndividualSettings(data);
+          setIndividualSettings(normalized);
         } else if (activeTab === 2) {
-          setCorporateSettings(data);
+          setCorporateSettings(normalized);
         } else {
-          setBankStaffSettings(data);
+          setBankStaffSettings(normalized);
         }
       }
     } catch (err) {
@@ -209,11 +219,11 @@ export default function SettingsPage() {
     }
   };
 
-  const updatePosition = (field: keyof Omit<PrintSettings, 'id' | 'accountType' | 'checkWidth' | 'checkHeight'>, key: keyof PrintPosition, value: number | string) => {
+  const updatePosition = (field: keyof Omit<PrintSettings, 'id' | 'accountType' | 'checkWidth' | 'checkHeight' | 'printMode'>, key: keyof PrintPosition, value: number | string) => {
     setCurrentSettings(prev => ({
       ...prev,
       [field]: {
-        ...prev[field],
+        ...(prev[field] as PrintPosition),
         [key]: value
       }
     }));
@@ -226,6 +236,13 @@ export default function SettingsPage() {
     }));
   };
 
+  const updatePrintMode = (printMode: 'single' | 'sheet3') => {
+    // Apply to all account-type tabs so print mode is not lost when printing another type
+    setIndividualSettings((prev) => ({ ...prev, printMode }));
+    setCorporateSettings((prev) => ({ ...prev, printMode }));
+    setBankStaffSettings((prev) => ({ ...prev, printMode }));
+  };
+
   const handleSave = async () => {
     setLoading(true);
     setError('');
@@ -235,7 +252,7 @@ export default function SettingsPage() {
       const token = localStorage.getItem('token');
 
       if (!token) {
-        setError('الرجاء تسجيل الدخول');
+        setError(t('settings.pleaseSignIn'));
         return;
       }
 
@@ -251,12 +268,12 @@ export default function SettingsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess('تم حفظ الإعدادات بنجاح!');
+        setSuccess(t('settings.settingsSaved'));
       } else {
-        setError(data.error || 'فشل في حفظ الإعدادات');
+        setError(data.error || t('settings.failedSaveSettings'));
       }
     } catch (err) {
-      setError('فشل في حفظ الإعدادات');
+      setError(t('settings.failedSaveSettings'));
       console.error('Error saving settings:', err);
     } finally {
       setLoading(false);
@@ -264,22 +281,22 @@ export default function SettingsPage() {
   };
 
   const handleReset = () => {
-    if (confirm('هل أنت متأكد من إعادة تعيين الإعدادات للقيم الافتراضية؟')) {
+    if (confirm(t('settings.resetConfirm'))) {
       const defaults = activeTab === 1
         ? DEFAULT_INDIVIDUAL
         : activeTab === 2
           ? DEFAULT_CORPORATE
           : DEFAULT_BANK_STAFF;
       setCurrentSettings(() => defaults);
-      setSuccess('تم إعادة تعيين الإعدادات');
+      setSuccess(t('settings.settingsReset'));
     }
   };
 
   const handleTestPrint = () => {
     // للشيكات المصدقة (Tab 4)، نستخدم معاينة مختلفة
-    if (activeTab === 4) {
+    if ((activeTab as number) === 4) {
       const testSerialNumber = '000000001';
-      const testBranchName = 'فرع طرابلس';
+      const testBranchName = 'Tripoli Branch';
       const testAccountingNumber = '0010010001';
       const testRoutingNumber = '11000000';
 
@@ -290,7 +307,7 @@ export default function SettingsPage() {
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <title>معاينة شيك مصدق</title>
+  <title>Certified Check Preview</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     @page { size: ${currentSettings.checkWidth}mm ${currentSettings.checkHeight}mm; margin: 0; }
@@ -328,68 +345,75 @@ export default function SettingsPage() {
     }
 
     // للشيكات العادية (الأفراد، الشركات، الموظفين)
-    const testCheckData = {
-      checkNumber: 1,
-      serialNumber: '000000001',
-      accountHolderName: 'أحمد محمد علي السيد',
-      accountNumber: '001001000811217',
-      accountType: activeTab === 1 ? 'فردي' : activeTab === 2 ? 'شركة' : 'موظف',
-      routingNumber: '1100000001',
-      branchName: 'الفرع الرئيسي',
-      micrLine: `0${activeTab} 1100000001 001001000811217 000000001`,
-      checkSize: {
-        width: currentSettings.checkWidth,
-        height: currentSettings.checkHeight,
-        unit: 'mm'
-      },
-      branchNameX: currentSettings.branchName.x,
-      branchNameY: currentSettings.branchName.y,
-      branchNameFontSize: currentSettings.branchName.fontSize,
-      branchNameAlign: currentSettings.branchName.align,
-      serialNumberX: currentSettings.serialNumber.x,
-      serialNumberY: currentSettings.serialNumber.y,
-      serialNumberFontSize: currentSettings.serialNumber.fontSize,
-      serialNumberAlign: currentSettings.serialNumber.align,
-      accountNumberX: currentSettings.accountNumber?.x ?? 0,
-      accountNumberY: currentSettings.accountNumber?.y ?? 0,
-      accountNumberFontSize: currentSettings.accountNumber?.fontSize ?? 0,
-      accountNumberAlign: currentSettings.accountNumber?.align ?? 'center',
-      checkSequenceX: currentSettings.checkSequence.x,
-      checkSequenceY: currentSettings.checkSequence.y,
-      checkSequenceFontSize: currentSettings.checkSequence.fontSize,
-      checkSequenceAlign: currentSettings.checkSequence.align,
-      accountHolderNameX: currentSettings.accountHolderName.x,
-      accountHolderNameY: currentSettings.accountHolderName.y,
-      accountHolderNameFontSize: currentSettings.accountHolderName.fontSize,
-      accountHolderNameAlign: currentSettings.accountHolderName.align,
-      micrLineX: currentSettings.micrLine.x,
-      micrLineY: currentSettings.micrLine.y,
-      micrLineFontSize: currentSettings.micrLine.fontSize,
-      micrLineAlign: currentSettings.micrLine.align,
+    const makeTestCheck = (index: number) => {
+      const serial = String(index).padStart(9, '0');
+      return {
+        checkNumber: index,
+        serialNumber: serial,
+        accountHolderName: 'Ahmed Mohamed Ali',
+        accountNumber: '001001000811217',
+        accountType: activeTab === 1 ? 'Individual' : activeTab === 2 ? 'Corporate' : 'Employee',
+        routingNumber: '1100000001',
+        branchName: 'Main Branch',
+        micrLine: `0${activeTab} 1100000001 001001000811217 ${serial}`,
+        checkSize: {
+          width: currentSettings.checkWidth,
+          height: currentSettings.checkHeight,
+          unit: 'mm',
+        },
+        branchNameX: currentSettings.branchName.x,
+        branchNameY: currentSettings.branchName.y,
+        branchNameFontSize: currentSettings.branchName.fontSize,
+        branchNameAlign: currentSettings.branchName.align,
+        serialNumberX: currentSettings.serialNumber.x,
+        serialNumberY: currentSettings.serialNumber.y,
+        serialNumberFontSize: currentSettings.serialNumber.fontSize,
+        serialNumberAlign: currentSettings.serialNumber.align,
+        accountNumberX: currentSettings.accountNumber?.x ?? 0,
+        accountNumberY: currentSettings.accountNumber?.y ?? 0,
+        accountNumberFontSize: currentSettings.accountNumber?.fontSize ?? 0,
+        accountNumberAlign: currentSettings.accountNumber?.align ?? 'center',
+        checkSequenceX: currentSettings.checkSequence.x,
+        checkSequenceY: currentSettings.checkSequence.y,
+        checkSequenceFontSize: currentSettings.checkSequence.fontSize,
+        checkSequenceAlign: currentSettings.checkSequence.align,
+        accountHolderNameX: currentSettings.accountHolderName.x,
+        accountHolderNameY: currentSettings.accountHolderName.y,
+        accountHolderNameFontSize: currentSettings.accountHolderName.fontSize,
+        accountHolderNameAlign: currentSettings.accountHolderName.align,
+        micrLineX: currentSettings.micrLine.x,
+        micrLineY: currentSettings.micrLine.y,
+        micrLineFontSize: currentSettings.micrLine.fontSize,
+        micrLineAlign: currentSettings.micrLine.align,
+      };
     };
+
+    const sampleCount = currentSettings.printMode === 'sheet3' ? 3 : 1;
+    const testChecks = Array.from({ length: sampleCount }, (_, i) => makeTestCheck(i + 1));
 
     const checkbookData = {
       operation: {
         accountNumber: '001001000811217',
-        accountHolderName: 'أحمد محمد علي السيد',
+        accountHolderName: 'Ahmed Mohamed Ali',
         accountType: activeTab,
-        branchName: 'الفرع الرئيسي',
+        branchName: 'Main Branch',
         routingNumber: '1100000001',
         serialFrom: 1,
-        serialTo: 1,
-        sheetsPrinted: 1,
+        serialTo: sampleCount,
+        sheetsPrinted: sampleCount,
         printDate: new Date().toISOString(),
       },
-      checks: [testCheckData],
+      checks: testChecks,
     };
 
     try {
-      // استخدام renderCheckbookHtml من printRenderer
-      const htmlContent = renderCheckbookHtml(checkbookData);
+      const htmlContent = renderCheckbookHtml(checkbookData, {
+        printMode: currentSettings.printMode,
+      });
 
       const printWindow = window.open('', '_blank');
       if (!printWindow) {
-        setError('فشل فتح نافذة الطباعة. يرجى السماح بالنوافذ المنبثقة.');
+        setError(t('settings.failedOpenPrintWindow'));
         return;
       }
 
@@ -397,7 +421,7 @@ export default function SettingsPage() {
       printWindow.document.close();
     } catch (err) {
       console.error('Error in test print:', err);
-      setError('فشل في إنشاء معاينة الطباعة');
+      setError(t('settings.failedCreatePreview'));
     }
   };
 
@@ -417,15 +441,15 @@ export default function SettingsPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <SettingsIcon className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-800">إعدادات الطباعة</h1>
+            <h1 className="text-2xl font-bold text-gray-800">{t('settings.title')}</h1>
           </div>
         </div>
 
         <div className="card space-y-4">
           <div className="flex flex-col gap-2">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">رابط SOAP API</h2>
-              <p className="text-sm text-gray-600">يمكنك تغيير رابط خدمة SOAP لاختبار بيئات مختلفة دون الحاجة لإعادة نشر النظام.</p>
+              <h2 className="text-lg font-semibold text-gray-800">{t('settings.soapApiUrl')}</h2>
+              <p className="text-sm text-gray-600">{t('settings.soapApiUrlDesc')}</p>
             </div>
             {soapApiMessage && (
               <div className={`${soapApiMessage.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'} border px-3 py-2 rounded`}>
@@ -435,7 +459,7 @@ export default function SettingsPage() {
           </div>
 
           <label className="block text-sm text-gray-600" htmlFor="soap-endpoint-input">
-            رابط SOAP الحالي
+            {t('settings.currentSoapUrl')}
           </label>
           <input
             id="soap-endpoint-input"
@@ -457,12 +481,12 @@ export default function SettingsPage() {
               {soapApiSaving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  جاري الحفظ...
+                  {t('common.saving')}
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  حفظ الرابط
+                  {t('settings.saveUrl')}
                 </>
               )}
             </button>
@@ -474,19 +498,19 @@ export default function SettingsPage() {
               className="btn bg-gray-100 text-gray-800 hover:bg-gray-200 flex items-center gap-2 disabled:opacity-50"
             >
               <RefreshCw className={soapApiLoading ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />
-              إعادة تحميل الرابط
+              {t('settings.reloadUrl')}
             </button>
 
             <div className="text-xs text-gray-500 flex items-center">
-              {soapApiLoading ? 'جاري تحميل الرابط من الخادم...' : 'آخر قيمة محمّلة من الخادم'}
+              {soapApiLoading ? t('settings.loadingUrl') : t('settings.lastValueLoaded')}
             </div>
           </div>
 
           <div className="border-t pt-4 mt-4">
             <div className="flex flex-col gap-2">
               <div>
-                <h2 className="text-lg font-semibold text-gray-800">رابط SOAP API (الأسماء)</h2>
-                <p className="text-sm text-gray-600">رابط خدمة SOAP الخاصة بجلب أسماء أصحاب الحسابات (FCUBSIAService).</p>
+                <h2 className="text-lg font-semibold text-gray-800">{t('settings.soapApiUrlNames')}</h2>
+                <p className="text-sm text-gray-600">{t('settings.soapApiUrlNamesDesc')}</p>
               </div>
               {soapIAApiMessage && (
                 <div className={`${soapIAApiMessage.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'} border px-3 py-2 rounded`}>
@@ -496,7 +520,7 @@ export default function SettingsPage() {
             </div>
 
             <label className="block text-sm text-gray-600 mt-3" htmlFor="soap-ia-endpoint-input">
-              رابط SOAP IA الحالي
+              {t('settings.currentSoapIaUrl')}
             </label>
             <input
               id="soap-ia-endpoint-input"
@@ -518,12 +542,12 @@ export default function SettingsPage() {
                 {soapIAApiSaving ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    جاري الحفظ...
+                    {t('common.saving')}
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    حفظ الرابط
+                    {t('settings.saveUrl')}
                   </>
                 )}
               </button>
@@ -535,11 +559,11 @@ export default function SettingsPage() {
                 className="btn bg-gray-100 text-gray-800 hover:bg-gray-200 flex items-center gap-2 disabled:opacity-50"
               >
                 <RefreshCw className={soapIAApiLoading ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />
-                إعادة تحميل الرابط
+                {t('settings.reloadUrl')}
               </button>
 
               <div className="text-xs text-gray-500 flex items-center">
-                {soapIAApiLoading ? 'جاري تحميل الرابط من الخادم...' : 'آخر قيمة محمّلة من الخادم'}
+                {soapIAApiLoading ? t('settings.loadingUrl') : t('settings.lastValueLoaded')}
               </div>
             </div>
           </div>
@@ -555,7 +579,7 @@ export default function SettingsPage() {
                 : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
-              شيكات الأفراد (25 ورقة)
+              {t('settings.tabIndividual')}
             </button>
             <button
               onClick={() => setActiveTab(2)}
@@ -564,7 +588,7 @@ export default function SettingsPage() {
                 : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
-              شيكات الشركات (50 ورقة)
+              {t('settings.tabCorporate')}
             </button>
             <button
               onClick={() => setActiveTab(3)}
@@ -573,7 +597,7 @@ export default function SettingsPage() {
                 : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
-              شيكات موظفين (10 ورقة)
+              {t('settings.tabEmployee')}
             </button>
           </div>
         </div>
@@ -595,17 +619,17 @@ export default function SettingsPage() {
           {/* Settings Form */}
           <div className="card space-y-6">
             <h2 className="text-lg font-semibold text-gray-800">
-              مواصفات الشيك
+              {t('settings.checkSpecifications')}
             </h2>
 
             {/* Check Dimensions */}
             <div className="space-y-4">
-              <h3 className="font-medium text-gray-700">المقاسات (ملم)</h3>
+              <h3 className="font-medium text-gray-700">{t('settings.dimensionsMm')}</h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">
-                    العرض (الطول)
+                    {t('common.width')}
                   </label>
                   <input
                     type="number"
@@ -618,7 +642,7 @@ export default function SettingsPage() {
 
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">
-                    الارتفاع
+                    {t('common.height')}
                   </label>
                   <input
                     type="number"
@@ -631,13 +655,67 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {/* Print mode: single check vs sheet of 3 */}
+            <div className="space-y-3 border-t pt-4">
+              <h3 className="font-medium text-gray-700">{t('settings.printMode')}</h3>
+              <p className="text-sm text-gray-500">{t('settings.printModeHint')}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    currentSettings.printMode === 'single'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="printMode"
+                    className="mt-1"
+                    checked={currentSettings.printMode === 'single'}
+                    onChange={() => updatePrintMode('single')}
+                  />
+                  <span>
+                    <span className="block font-medium text-gray-800">{t('settings.printModeSingle')}</span>
+                    <span className="block text-xs text-gray-500 mt-0.5">{t('settings.printModeSingleDesc')}</span>
+                  </span>
+                </label>
+                <label
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    currentSettings.printMode === 'sheet3'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="printMode"
+                    className="mt-1"
+                    checked={currentSettings.printMode === 'sheet3'}
+                    onChange={() => updatePrintMode('sheet3')}
+                  />
+                  <span>
+                    <span className="block font-medium text-gray-800">{t('settings.printModeSheet')}</span>
+                    <span className="block text-xs text-gray-500 mt-0.5">{t('settings.printModeSheetDesc')}</span>
+                  </span>
+                </label>
+              </div>
+              {currentSettings.printMode === 'sheet3' && (
+                <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-md px-3 py-2">
+                  {t('settings.printModeSheetPageSize', {
+                    width: currentSettings.checkWidth,
+                    height: currentSettings.checkHeight * 3,
+                  })}
+                </p>
+              )}
+            </div>
+
             {/* Branch Name Position */}
             <div className="space-y-4 border-t pt-4">
-              <h3 className="font-medium text-gray-700">اسم الفرع</h3>
+              <h3 className="font-medium text-gray-700">{t('settings.branchName')}</h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">X (من اليسار)</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.xFromLeft')}</label>
                   <input
                     type="number"
                     value={currentSettings.branchName.x}
@@ -648,7 +726,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Y (من الأعلى)</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.yFromTop')}</label>
                   <input
                     type="number"
                     value={currentSettings.branchName.y}
@@ -659,7 +737,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.fontSize')}</label>
                   <input
                     type="number"
                     value={currentSettings.branchName.fontSize}
@@ -669,28 +747,28 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.alignment')}</label>
                   <select
                     value={currentSettings.branchName.align}
                     onChange={(e) => updatePosition('branchName', 'align', e.target.value)}
                     className="input w-full"
                   >
-                    <option value="left">يسار</option>
-                    <option value="center">وسط</option>
-                    <option value="right">يمين</option>
+                    <option value="left">{t('common.left')}</option>
+                    <option value="center">{t('common.center')}</option>
+                    <option value="right">{t('common.right')}</option>
                   </select>
                 </div>
               </div>
             </div>
 
             {/* Account Number Position */}
-            {activeTab !== 4 && currentSettings.accountNumber && (
+            {(activeTab as number) !== 4 && currentSettings.accountNumber && (
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-medium text-gray-700">رقم الحساب</h3>
+                <h3 className="font-medium text-gray-700">{t('common.accountNumber')}</h3>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">X (من اليسار)</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.xFromLeft')}</label>
                     <input
                       type="number"
                       value={currentSettings.accountNumber.x}
@@ -701,7 +779,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Y (من الأعلى)</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.yFromTop')}</label>
                     <input
                       type="number"
                       value={currentSettings.accountNumber.y}
@@ -712,7 +790,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.fontSize')}</label>
                     <input
                       type="number"
                       value={currentSettings.accountNumber.fontSize}
@@ -722,15 +800,15 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.alignment')}</label>
                     <select
                       value={currentSettings.accountNumber.align}
                       onChange={(e) => updatePosition('accountNumber', 'align', e.target.value)}
                       className="input w-full"
                     >
-                      <option value="left">يسار</option>
-                      <option value="center">وسط</option>
-                      <option value="right">يمين</option>
+                      <option value="left">{t('common.left')}</option>
+                      <option value="center">{t('common.center')}</option>
+                      <option value="right">{t('common.right')}</option>
                     </select>
                   </div>
                 </div>
@@ -738,11 +816,11 @@ export default function SettingsPage() {
             )}
             {/* Serial Number Position */}
             <div className="space-y-4 border-t pt-4">
-              <h3 className="font-medium text-gray-700">الرقم التسلسلي</h3>
+              <h3 className="font-medium text-gray-700">{t('settings.serialNumber')}</h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">X</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.x')}</label>
                   <input
                     type="number"
                     value={currentSettings.serialNumber.x}
@@ -753,7 +831,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Y</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.y')}</label>
                   <input
                     type="number"
                     value={currentSettings.serialNumber.y}
@@ -764,7 +842,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.fontSize')}</label>
                   <input
                     type="number"
                     value={currentSettings.serialNumber.fontSize}
@@ -774,15 +852,15 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.alignment')}</label>
                   <select
                     value={currentSettings.serialNumber.align}
                     onChange={(e) => updatePosition('serialNumber', 'align', e.target.value)}
                     className="input w-full"
                   >
-                    <option value="left">يسار</option>
-                    <option value="center">وسط</option>
-                    <option value="right">يمين</option>
+                    <option value="left">{t('common.left')}</option>
+                    <option value="center">{t('common.center')}</option>
+                    <option value="right">{t('common.right')}</option>
                   </select>
                 </div>
               </div>
@@ -790,11 +868,11 @@ export default function SettingsPage() {
 
             {/* Check Sequence Position */}
             <div className="space-y-4 border-t pt-4">
-              <h3 className="font-medium text-gray-700">رقم التسلسل الثاني</h3>
+              <h3 className="font-medium text-gray-700">{t('settings.secondSerialNumber')}</h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">X (من اليسار)</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.xFromLeft')}</label>
                   <input
                     type="number"
                     value={currentSettings.checkSequence.x}
@@ -805,7 +883,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Y (من الأعلى)</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.yFromTop')}</label>
                   <input
                     type="number"
                     value={currentSettings.checkSequence.y}
@@ -816,7 +894,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.fontSize')}</label>
                   <input
                     type="number"
                     value={currentSettings.checkSequence.fontSize}
@@ -826,28 +904,28 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.alignment')}</label>
                   <select
                     value={currentSettings.checkSequence.align}
                     onChange={(e) => updatePosition('checkSequence', 'align', e.target.value)}
                     className="input w-full"
                   >
-                    <option value="left">يسار</option>
-                    <option value="center">وسط</option>
-                    <option value="right">يمين</option>
+                    <option value="left">{t('common.left')}</option>
+                    <option value="center">{t('common.center')}</option>
+                    <option value="right">{t('common.right')}</option>
                   </select>
                 </div>
               </div>
             </div>
 
             {/* Account Holder Name Position */}
-            {activeTab !== 4 && (
+            {(activeTab as number) !== 4 && (
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-medium text-gray-700">اسم صاحب الحساب</h3>
+                <h3 className="font-medium text-gray-700">{t('settings.accountHolderName')}</h3>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">X</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.x')}</label>
                     <input
                       type="number"
                       value={currentSettings.accountHolderName.x}
@@ -858,7 +936,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Y</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.y')}</label>
                     <input
                       type="number"
                       value={currentSettings.accountHolderName.y}
@@ -869,7 +947,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.fontSize')}</label>
                     <input
                       type="number"
                       value={currentSettings.accountHolderName.fontSize}
@@ -879,15 +957,15 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('common.alignment')}</label>
                     <select
                       value={currentSettings.accountHolderName.align}
                       onChange={(e) => updatePosition('accountHolderName', 'align', e.target.value)}
                       className="input w-full"
                     >
-                      <option value="left">يسار</option>
-                      <option value="center">وسط</option>
-                      <option value="right">يمين</option>
+                      <option value="left">{t('common.left')}</option>
+                      <option value="center">{t('common.center')}</option>
+                      <option value="right">{t('common.right')}</option>
                     </select>
                   </div>
                 </div>
@@ -897,21 +975,21 @@ export default function SettingsPage() {
             {/* MICR Line Position */}
             <div className="space-y-4 border-t pt-4">
               <div>
-                <h3 className="font-medium text-gray-700 mb-2">خط MICR</h3>
+                <h3 className="font-medium text-gray-700 mb-2">{t('settings.micrLine')}</h3>
                 <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
-                  <p className="font-medium mb-1">ترتيب البيانات (من اليمين لليسار - RTL):</p>
+                  <p className="font-medium mb-1">{t('settings.micrOrderTitle')}</p>
                   <p className="font-mono text-xs">
-                    [نوع الصك: 01 أفراد / 02 شركات] [رقم الحساب 15 رقم] [الرقم التوجيهي] [رقم التسلسل 9 أرقام]
+                    {t('settings.micrOrderFormat')}
                   </p>
                   <p className="mt-1 font-mono text-xs text-blue-600">
-                    مثال: 01 100012345678901 1100000001 000000001
+                    {t('settings.micrOrderExample')}
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">X</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.x')}</label>
                   <input
                     type="number"
                     value={currentSettings.micrLine.x}
@@ -922,7 +1000,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Y</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.y')}</label>
                   <input
                     type="number"
                     value={currentSettings.micrLine.y}
@@ -933,7 +1011,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.fontSize')}</label>
                   <input
                     type="number"
                     value={currentSettings.micrLine.fontSize}
@@ -943,15 +1021,15 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t('common.alignment')}</label>
                   <select
                     value={currentSettings.micrLine.align}
                     onChange={(e) => updatePosition('micrLine', 'align', e.target.value)}
                     className="input w-full"
                   >
-                    <option value="left">يسار</option>
-                    <option value="center">وسط</option>
-                    <option value="right">يمين</option>
+                    <option value="left">{t('common.left')}</option>
+                    <option value="center">{t('common.center')}</option>
+                    <option value="right">{t('common.right')}</option>
                   </select>
                 </div>
               </div>
@@ -966,7 +1044,7 @@ export default function SettingsPage() {
                   className="flex-1 btn btn-primary flex items-center justify-center gap-2"
                 >
                   <Save className="w-5 h-5" />
-                  حفظ الإعدادات
+                  {t('settings.saveSettings')}
                 </button>
 
                 <button
@@ -974,7 +1052,7 @@ export default function SettingsPage() {
                   className="btn bg-gray-200 hover:bg-gray-300 text-gray-800 flex items-center gap-2"
                 >
                   <RotateCcw className="w-5 h-5" />
-                  إعادة تعيين
+                  {t('settings.resetSettings')}
                 </button>
               </div>
 
@@ -983,7 +1061,7 @@ export default function SettingsPage() {
                 className="w-full btn bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2"
               >
                 <Printer className="w-5 h-5" />
-                تجربة الطباعة
+                {t('settings.testPrint')}
               </button>
             </div>
           </div>
@@ -991,7 +1069,7 @@ export default function SettingsPage() {
           {/* Preview */}
           <div className="card">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
-              معاينة الشيك
+              {t('settings.checkPreview')}
             </h2>
 
             <div
@@ -1012,7 +1090,7 @@ export default function SettingsPage() {
                   transform: currentSettings.branchName.align === 'center' ? 'translateX(-50%)' : 'none',
                 }}
               >
-                الفرع الرئيسي
+                {t('settings.previewMainBranch')}
               </div>
 
               {/* Account Number */}
@@ -1092,18 +1170,21 @@ export default function SettingsPage() {
 
             <div className="mt-4 space-y-3">
               <div className="text-sm text-gray-600 space-y-1">
-                <p>• المعاينة بمقياس 2:1 للوضوح</p>
-                <p>• المقاسات الفعلية: {currentSettings.checkWidth} × {currentSettings.checkHeight} ملم</p>
-                <p>• استخدم الإعدادات لضبط مواضع البيانات بدقة</p>
+                <p>{t('settings.previewScale')}</p>
+                <p>{t('settings.actualDimensions', {
+                  width: currentSettings.checkWidth,
+                  height: currentSettings.checkHeight,
+                })}</p>
+                <p>{t('settings.useSettingsHint')}</p>
               </div>
 
               <div className="bg-green-50 border border-green-200 rounded p-3 text-sm">
-                <p className="font-medium text-green-800 mb-1">📋 تكوين خط MICR (من اليمين لليسار):</p>
+                <p className="font-medium text-green-800 mb-1">{t('settings.micrConfigTitle')}</p>
                 <div className="font-mono text-xs text-green-700 space-y-1">
-                  <p className="text-right">• <span className="text-green-900 font-bold">01</span> (أفراد) أو <span className="text-green-900 font-bold">02</span> (شركات) - النوع (يمين)</p>
-                  <p className="text-right">• <span className="text-green-900 font-bold">100012345678901</span> (15 رقم) - رقم الحساب</p>
-                  <p className="text-right">• <span className="text-green-900 font-bold">1100000001</span> - الرقم التوجيهي (رقم الفرع)</p>
-                  <p className="text-right">• <span className="text-green-900 font-bold">000000001</span> (9 أرقام) - التسلسل (يسار)</p>
+                  <p className="text-right">{t('settings.micrConfigType', { code: '01', code2: '02' })}</p>
+                  <p className="text-right">{t('settings.micrConfigAccount', { digits: '100012345678901' })}</p>
+                  <p className="text-right">{t('settings.micrConfigRouting', { digits: '1100000001' })}</p>
+                  <p className="text-right">{t('settings.micrConfigSerial', { digits: '000000001' })}</p>
                 </div>
               </div>
             </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Stamp, Printer, Eye, Save, AlertCircle, CheckCircle, Calculator, PlusCircle } from 'lucide-react';
 import { certifiedCheckService } from '@/lib/api';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 interface CertifiedCheckData {
     id?: number;
@@ -144,6 +145,7 @@ const numberToArabicWords = (num: number): string => {
 };
 
 export default function CertifiedPrintPage() {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState<CertifiedCheckData>({
         accountHolderName: '',
         beneficiaryName: '',
@@ -206,7 +208,7 @@ export default function CertifiedPrintPage() {
             setBranches(data);
         } catch (err: any) {
             console.error('Error loading branches:', err);
-            setError(err.response?.data?.error || 'فشل في تحميل قائمة الفروع');
+            setError(err.response?.data?.error || t('certifiedPrint.loadBranchesFailed'));
         }
     };
 
@@ -217,7 +219,7 @@ export default function CertifiedPrintPage() {
             setRecords(data.records);
         } catch (err: any) {
             console.error('Error loading records:', err);
-            setError(err.response?.data?.error || 'فشل في تحميل سجل العمليات');
+            setError(err.response?.data?.error || t('certifiedPrint.loadOpsFailed'));
         } finally {
             setRecordsLoading(false);
         }
@@ -282,7 +284,7 @@ export default function CertifiedPrintPage() {
             }
         } catch (err: any) {
             console.error('Error loading settings:', err);
-            setError(err.response?.data?.error || 'فشل في تحميل إعدادات الطباعة');
+            setError(err.response?.data?.error || t('certifiedPrint.loadSettingsFailed'));
         }
     };
 
@@ -292,27 +294,27 @@ export default function CertifiedPrintPage() {
 
     const validateForm = (): boolean => {
         if (!formData.checkNumber.trim()) {
-            setError('يرجى إدخال رقم الشيك المرمز');
+            setError(t('certifiedPrint.enterCheckNumber'));
             return false;
         }
         if (!formData.accountHolderName.trim()) {
-            setError('يرجى إدخال اسم صاحب الحساب');
+            setError(t('certifiedPrint.enterAccountHolder'));
             return false;
         }
         if (!formData.beneficiaryName.trim()) {
-            setError('يرجى إدخال اسم المستفيد');
+            setError(t('certifiedPrint.enterBeneficiary'));
             return false;
         }
         if (!formData.accountNumber.trim()) {
-            setError('يرجى إدخال رقم الحساب');
+            setError(t('certifiedPrint.enterAccountNumber'));
             return false;
         }
         if (!formData.amountDinars || parseInt(formData.amountDinars) <= 0) {
-            setError('يرجى إدخال مبلغ صحيح');
+            setError(t('certifiedPrint.enterValidAmount'));
             return false;
         }
         if (!formData.branchId) {
-            setError('يرجى اختيار الفرع');
+            setError(t('certifiedPrint.selectBranch'));
             return false;
         }
         return true;
@@ -478,9 +480,9 @@ export default function CertifiedPrintPage() {
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-800">
-                                {formData.id ? 'تعديل بيانات شيك مصدق' : 'طباعة شيك مصدق'}
+                                {formData.id ? t('certifiedPrint.editTitle') : t('certifiedPrint.title')}
                             </h1>
-                            <p className="text-gray-600">إدخال بيانات ومعاينة وطباعة الشيكات المصدقة</p>
+                            <p className="text-gray-600">{t('certifiedPrint.subtitle')}</p>
                         </div>
                     </div>
                     {formData.id && (
@@ -489,7 +491,7 @@ export default function CertifiedPrintPage() {
                             className="btn bg-gray-50 text-gray-700 border border-gray-200 hover:bg-white flex items-center gap-2"
                         >
                             <PlusCircle className="w-5 h-5 text-green-600" />
-                            شيك جديد
+                            {t('certifiedPrint.newCheck')}
                         </button>
                     )}
                 </div>
@@ -512,7 +514,7 @@ export default function CertifiedPrintPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Form Section */}
                     <div className="card space-y-6">
-                        <h2 className="text-lg font-bold text-gray-800 border-b pb-3">بيانات الشيك المصدق</h2>
+                        <h2 className="text-lg font-bold text-gray-800 border-b pb-3">{t('certifiedPrint.checkData')}</h2>
 
                         {/* Branch Selection */}
                         <div>
@@ -701,7 +703,7 @@ export default function CertifiedPrintPage() {
 
                     {/* Preview Section */}
                     <div className="card">
-                        <h2 className="text-lg font-bold text-gray-800 border-b pb-3 mb-6">معاينة الشيك</h2>
+                        <h2 className="text-lg font-bold text-gray-800 border-b pb-3 mb-6">{t('certifiedPrint.preview')}</h2>
 
                         <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300">
                             {showPreview && formData.beneficiaryName && formData.amountDinars ? (
@@ -823,7 +825,7 @@ export default function CertifiedPrintPage() {
                     <div className="flex items-center justify-between border-b pb-4 mb-4">
                         <div className="flex items-center gap-2">
                             <Printer className="w-6 h-6 text-amber-600" />
-                            <h2 className="text-xl font-bold text-gray-800">سجل العمليات الأخير</h2>
+                            <h2 className="text-xl font-bold text-gray-800">{t('certifiedPrint.recentOps')}</h2>
                         </div>
                         <button
                             onClick={loadRecords}

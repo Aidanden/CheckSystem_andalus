@@ -4,11 +4,14 @@ import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
 import { LogOut, MapPin } from 'lucide-react';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 export default function Header() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
+  const { t } = useTranslation();
 
   const handleLogout = () => {
     dispatch(logout());
@@ -17,10 +20,10 @@ export default function Header() {
 
   return (
     <header className="bg-white border-b-2 border-gray-100 px-8 py-4 shadow-sm">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h2 className="text-xl font-bold text-gray-800 mb-1">
-            مرحباً، <span className="text-primary-600">{user?.username}</span>
+            {t('header.hello')} <span className="text-primary-600">{user?.username}</span>
           </h2>
           {user?.branch && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -30,15 +33,17 @@ export default function Header() {
           )}
         </div>
 
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-        >
-          <LogOut className="w-5 h-5" />
-          <span>تسجيل الخروج</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+          >
+            <LogOut className="w-5 h-5" />
+            <span>{t('header.logout')}</span>
+          </button>
+        </div>
       </div>
     </header>
   );
 }
-

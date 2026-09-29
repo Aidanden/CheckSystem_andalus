@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { printLogService, soapService, branchService } from '@/lib/api';
 import { useAppSelector } from '@/store/hooks';
-import { FileText, Printer, Search, Filter, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import renderCheckbookHtml, { type CheckbookData } from '@/lib/utils/printRenderer';
+import { FileText, Printer, Search, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import renderCheckbookHtml from '@/lib/utils/printRenderer';
 import { buildPreviewFromSoap, type SoapCheckbookResponse } from '@/lib/soap/checkbook';
 import { printSettingsAPI, type PrintSettings } from '@/lib/printSettings.api';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 interface PrintLog {
   id: number;
@@ -26,6 +27,7 @@ interface PrintLog {
 }
 
 export default function PrintLogsPage() {
+  const { t, locale } = useTranslation();
   const { user: currentUser } = useAppSelector((state) => state.auth);
   const [logs, setLogs] = useState<PrintLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +98,7 @@ export default function PrintLogsPage() {
 
   const openReprintModal = (log: PrintLog) => {
     if (!canReprint) {
-      alert('ليس لديك صلاحية إعادة الطباعة. يرجى التواصل مع المسؤول.');
+      alert(t('printLogs.noReprintPermission'));
       return;
     }
     setSelectedLog(log);
@@ -111,18 +113,21 @@ export default function PrintLogsPage() {
 
     // Validation
     if (reprintStartSerial < selectedLog.firstChequeNumber || reprintEndSerial > selectedLog.lastChequeNumber) {
-      alert(`الرجاء اختيار نطاق ضمن النطاق الأصلي (${selectedLog.firstChequeNumber} - ${selectedLog.lastChequeNumber})`);
+      alert(t('printLogs.alertRangeWithin', {
+        from: selectedLog.firstChequeNumber,
+        to: selectedLog.lastChequeNumber,
+      }));
       return;
     }
 
     if (reprintStartSerial > reprintEndSerial) {
-      alert('رقم البداية يجب أن يكون أصغر من أو يساوي رقم النهاية');
+      alert(t('printLogs.alertStartLteEnd'));
       return;
     }
 
     // التحقق من اختيار سبب إعادة الطباعة
     if (!reprintReason || (reprintReason !== 'damaged' && reprintReason !== 'not_printed')) {
-      alert('الرجاء اختيار سبب إعادة الطباعة: ورقة تالفة أو ورقة لم تطبع');
+      alert(t('printLogs.alertSelectReason'));
       return;
     }
 
@@ -141,7 +146,7 @@ export default function PrintLogsPage() {
       );
 
       if (filteredStatuses.length === 0) {
-        throw new Error('لم يتم العثور على شيكات في النطاق المحدد');
+        throw new Error(t('printLogs.errorNoChecksInRange'));
       }
 
       // إنشاء استجابة SOAP مصفاة مع الحفاظ على chequeLeaves الأصلي لتحديد نوع الحساب بشكل صحيح
@@ -165,7 +170,7 @@ export default function PrintLogsPage() {
       let resolvedBranchName = soapResponse.branchName || selectedLog.branchName;
       let resolvedRouting = soapResponse.routingNumber;
 
-      if (!resolvedBranchName || !resolvedRouting || resolvedBranchName.startsWith('فرع 0')) {
+      if (!resolvedBranchName || !resolvedRouting || resolvedBranchName.startsWith('Branch 0')) {
         try {
           const branch = await branchService.getByAccountNumber(selectedLog.accountNumber);
           if (branch) {
@@ -177,7 +182,7 @@ export default function PrintLogsPage() {
         }
       }
 
-      resolvedBranchName = resolvedBranchName || `فرع ${soapResponse.accountBranch}`;
+      resolvedBranchName = resolvedBranchName || t('printLogs.branchFallback', { code: soapResponse.accountBranch });
       resolvedRouting = resolvedRouting || soapResponse.accountBranch;
 
       // بناء معاينة الطباعة
@@ -187,24 +192,9 @@ export default function PrintLogsPage() {
         routingNumber: resolvedRouting,
       });
 
-      // طباعة
-      const htmlContent = renderCheckbookHtml(preview);
-      const printWindow = window.open('', '_blank', 'width=1024,height=768');
-      if (!printWindow) {
-        throw new Error('تعذّر فتح نافذة الطباعة');
-      }
-
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-
-      setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-      }, 300);
-
-      // تسجيل عملية إعادة الطباعة
+      // تسجيل إعادة الطباعة وخصم المخزون أولاً — إن فشل لا تُفتح نافذة الطباعة
+      const chequeNumbers = filteredStatuses.map(s => s.chequeNumber);
       try {
-        const chequeNumbers = filteredStatuses.map(s => s.chequeNumber);
         await printLogService.create({
           accountNumber: soapResponse.accountNumber,
           accountBranch: soapResponse.accountBranch,
@@ -217,20 +207,49 @@ export default function PrintLogsPage() {
           reprintReason: reprintReason as 'damaged' | 'not_printed',
           chequeNumbers,
         });
-        console.log('✅ تم تسجيل عملية إعادة الطباعة بنجاح');
         loadLogs();
       } catch (logError: any) {
         console.error('فشل تسجيل عملية إعادة الطباعة:', logError);
-        alert(logError.response?.data?.error || logError.message || 'فشل تسجيل عملية إعادة الطباعة');
+        alert(
+          logError?.response?.data?.error ||
+          logError?.response?.data?.details ||
+          logError?.message ||
+          t('printLogs.errorLogReprint')
+        );
         return;
       }
 
+      // طباعة بعد نجاح الخصم/التسجيل — جلب طريقة الطباعة الحالية من الإعدادات
+      let printMode: 'single' | 'sheet3' =
+        resolvedLayout?.printMode === 'sheet3' ? 'sheet3' : 'single';
+      try {
+        const freshLayout = await printSettingsAPI.getSettings(accountType);
+        printMode = freshLayout.printMode === 'sheet3' ? 'sheet3' : 'single';
+      } catch {
+        // keep previous printMode
+      }
+
+      const htmlContent = renderCheckbookHtml(preview, { printMode });
+      const printWindow = window.open('', '_blank', 'width=1024,height=768');
+      if (!printWindow) {
+        throw new Error(t('printLogs.errorOpenPrintWindow'));
+      }
+
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 300);
+
       setReprintModalOpen(false);
-      setReprintReason(''); // إعادة تعيين السبب
-      // alert('✅ تمت إعادة الطباعة بنجاح!'); // Removed alert to be less intrusive
+      setReprintReason('');
     } catch (error: any) {
       console.error('Reprint failed:', error);
-      alert(`فشل في إعادة الطباعة: ${error.message || 'خطأ غير معروف'}`);
+      alert(t('printLogs.errorReprintFailed', {
+        message: error.message || t('printLogs.errorUnknown'),
+      }));
     } finally {
       setReprinting(false);
     }
@@ -240,7 +259,7 @@ export default function PrintLogsPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString('ar-LY', {
+    return date.toLocaleString(locale === 'ar' ? 'ar-LY' : 'en-GB', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -250,7 +269,7 @@ export default function PrintLogsPage() {
   };
 
   const getOperationTypeLabel = (type: string) => {
-    return type === 'print' ? 'طباعة' : 'إعادة طباعة';
+    return type === 'print' ? t('printLogs.opPrint') : t('printLogs.opReprint');
   };
 
   const getOperationTypeBadge = (type: string) => {
@@ -281,8 +300,8 @@ export default function PrintLogsPage() {
               <FileText className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">سجلات الطباعة</h1>
-              <p className="text-sm text-gray-600">عرض ومراقبة جميع عمليات الطباعة وإعادة الطباعة</p>
+              <h1 className="text-2xl font-bold text-gray-800">{t('printLogs.title')}</h1>
+              <p className="text-sm text-gray-600">{t('printLogs.subtitle')}</p>
             </div>
           </div>
         </div>
@@ -291,7 +310,7 @@ export default function PrintLogsPage() {
         {!canReprint && (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg">
             <p className="text-sm font-medium">
-              ⚠️ ليس لديك صلاحية إعادة الطباعة. يمكنك فقط عرض السجلات.
+              ⚠️ {t('printLogs.viewOnlyNotice')}
             </p>
           </div>
         )}
@@ -302,7 +321,7 @@ export default function PrintLogsPage() {
             {/* Search by Account Number */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                البحث برقم الحساب
+                {t('printLogs.searchByAccount')}
               </label>
               <div className="flex gap-2">
                 <input
@@ -310,7 +329,7 @@ export default function PrintLogsPage() {
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="أدخل رقم الحساب..."
+                  placeholder={t('printLogs.accountPlaceholder')}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 <button
@@ -318,16 +337,16 @@ export default function PrintLogsPage() {
                   className="btn btn-primary flex items-center gap-2"
                 >
                   <Search className="w-5 h-5" />
-                  بحث
+                  {t('common.search')}
                 </button>
                 {searchTerm && (
                   <button
                     onClick={handleClearSearch}
                     className="btn bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 flex items-center gap-2"
-                    title="إلغاء البحث"
+                    title={t('printLogs.clearSearch')}
                   >
                     <X className="w-5 h-5" />
-                    <span className="hidden sm:inline">إلغاء</span>
+                    <span className="hidden sm:inline">{t('common.clear')}</span>
                   </button>
                 )}
               </div>
@@ -336,7 +355,7 @@ export default function PrintLogsPage() {
             {/* Filter by Operation Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                نوع العملية
+                {t('printLogs.operationType')}
               </label>
               <select
                 value={operationType}
@@ -346,9 +365,9 @@ export default function PrintLogsPage() {
                 }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="all">الكل</option>
-                <option value="print">طباعة</option>
-                <option value="reprint">إعادة طباعة</option>
+                <option value="all">{t('common.all')}</option>
+                <option value="print">{t('printLogs.opPrint')}</option>
+                <option value="reprint">{t('printLogs.opReprint')}</option>
               </select>
             </div>
           </div>
@@ -359,7 +378,7 @@ export default function PrintLogsPage() {
           <div className="card">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">إجمالي السجلات</p>
+                <p className="text-sm text-gray-600">{t('printLogs.totalRecords')}</p>
                 <p className="text-2xl font-bold text-gray-800">{total}</p>
               </div>
               <div className="p-3 bg-blue-100 rounded-lg">
@@ -376,28 +395,28 @@ export default function PrintLogsPage() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    رقم الحساب
+                    {t('common.accountNumber')}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    الفرع
+                    {t('common.branch')}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    نطاق الشيكات
+                    {t('printLogs.chequeRange')}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    العدد
+                    {t('printLogs.count')}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    نوع العملية
+                    {t('printLogs.operationType')}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    المستخدم
+                    {t('common.user')}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    التاريخ
+                    {t('common.date')}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    إجراءات
+                    {t('common.actions')}
                   </th>
                 </tr>
               </thead>
@@ -411,7 +430,7 @@ export default function PrintLogsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {log.branchName || `فرع ${log.accountBranch}`}
+                        {log.branchName || t('printLogs.branchFallback', { code: log.accountBranch })}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -439,10 +458,10 @@ export default function PrintLogsPage() {
                           onClick={() => openReprintModal(log)}
                           disabled={reprinting}
                           className="text-blue-600 hover:text-blue-800 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="إعادة الطباعة"
+                          title={t('common.reprint')}
                         >
                           <Printer className="w-4 h-4" />
-                          {reprinting ? 'جاري...' : 'إعادة طباعة'}
+                          {reprinting ? '...' : t('common.reprint')}
                         </button>
                       )}
                     </td>
@@ -458,12 +477,15 @@ export default function PrintLogsPage() {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 {/* Page Info */}
                 <div className="text-sm text-gray-700">
-                  عرض <span className="font-medium">{(page - 1) * limit + 1}</span> إلى{' '}
-                  <span className="font-medium">{Math.min(page * limit, total)}</span> من{' '}
-                  <span className="font-medium">{total}</span> سجل
+                  {t('printLogs.showingRecords', {
+                    from: (page - 1) * limit + 1,
+                    to: Math.min(page * limit, total),
+                    total,
+                  })}
                   {totalPages > 0 && (
                     <span className="text-gray-500 mr-2">
-                      (صفحة {page} من {totalPages})
+                      {' '}
+                      {t('printLogs.pageOf', { page, totalPages })}
                     </span>
                   )}
                 </div>
@@ -477,7 +499,7 @@ export default function PrintLogsPage() {
                     className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors font-medium"
                   >
                     <ChevronRight className="w-4 h-4" />
-                    <span>السابق</span>
+                    <span>{t('common.previous')}</span>
                   </button>
 
                   {/* Page Numbers */}
@@ -543,7 +565,7 @@ export default function PrintLogsPage() {
                     disabled={page === totalPages || loading}
                     className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors font-medium"
                   >
-                    <span>التالي</span>
+                    <span>{t('common.next')}</span>
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                 </div>
@@ -555,8 +577,8 @@ export default function PrintLogsPage() {
         {logs.length === 0 && !loading && (
           <div className="card text-center py-12">
             <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد سجلات</h3>
-            <p className="text-gray-600">لم يتم العثور على أي سجلات طباعة</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('printLogs.noRecords')}</h3>
+            <p className="text-gray-600">{t('printLogs.noLogsFound')}</p>
           </div>
         )}
       </div>
@@ -566,7 +588,7 @@ export default function PrintLogsPage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
               <h3 className="text-lg font-semibold text-gray-800">
-                إعادة طباعة شيكات
+                {t('printLogs.reprintModalTitle')}
               </h3>
               <button
                 onClick={() => setReprintModalOpen(false)}
@@ -578,15 +600,15 @@ export default function PrintLogsPage() {
 
             <div className="p-6 space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-                <p className="font-medium mb-1">تفاصيل الدفتر الأصلي:</p>
-                <p>رقم الحساب: <span className="font-mono font-bold">{selectedLog.accountNumber}</span></p>
-                <p>النطاق: <span className="font-mono font-bold">{selectedLog.firstChequeNumber} - {selectedLog.lastChequeNumber}</span></p>
+                <p className="font-medium mb-1">{t('printLogs.originalBookDetails')}</p>
+                <p>{t('printLogs.accountLabel')} <span className="font-mono font-bold">{selectedLog.accountNumber}</span></p>
+                <p>{t('printLogs.rangeLabel')} <span className="font-mono font-bold">{selectedLog.firstChequeNumber} - {selectedLog.lastChequeNumber}</span></p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    من شيك رقم
+                    {t('printLogs.fromChequeNumber')}
                   </label>
                   <input
                     type="number"
@@ -599,7 +621,7 @@ export default function PrintLogsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    إلى شيك رقم
+                    {t('printLogs.toChequeNumber')}
                   </label>
                   <input
                     type="number"
@@ -613,12 +635,12 @@ export default function PrintLogsPage() {
               </div>
 
               <div className="text-sm text-gray-500">
-                عدد الشيكات المحدد: <span className="font-bold text-gray-900">{Math.max(0, reprintEndSerial - reprintStartSerial + 1)}</span>
+                {t('printLogs.selectedChequeCount')} <span className="font-bold text-gray-900">{Math.max(0, reprintEndSerial - reprintStartSerial + 1)}</span>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  سبب إعادة الطباعة <span className="text-red-500">*</span>
+                  {t('printLogs.reprintReason')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={reprintReason}
@@ -626,18 +648,20 @@ export default function PrintLogsPage() {
                   className="input w-full"
                   required
                 >
-                  <option value="">-- اختر السبب --</option>
-                  <option value="damaged">ورقة تالفة (سيتم خصم من المخزون)</option>
-                  <option value="not_printed">ورقة لم تطبع (لن يتم خصم من المخزون)</option>
+                  <option value="">{t('printLogs.selectReason')}</option>
+                  <option value="damaged">{t('printLogs.reasonDamaged')}</option>
+                  <option value="not_printed">{t('printLogs.reasonNotPrinted')}</option>
                 </select>
                 {reprintReason === 'damaged' && (
                   <p className="text-xs text-amber-600 mt-1">
-                    ⚠️ سيتم خصم {Math.max(0, reprintEndSerial - reprintStartSerial + 1)} ورقة من المخزون
+                    ⚠️ {t('printLogs.stockDeductionWarning', {
+                      count: Math.max(0, reprintEndSerial - reprintStartSerial + 1),
+                    })}
                   </p>
                 )}
                 {reprintReason === 'not_printed' && (
                   <p className="text-xs text-green-600 mt-1">
-                    ✓ لن يتم خصم من المخزون لأن الورقة لم تطبع أصلاً
+                    ✓ {t('printLogs.noStockDeduction')}
                   </p>
                 )}
               </div>
@@ -649,7 +673,7 @@ export default function PrintLogsPage() {
                 className="btn bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                 disabled={reprinting}
               >
-                إلغاء
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleConfirmReprint}
@@ -659,12 +683,12 @@ export default function PrintLogsPage() {
                 {reprinting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    جاري الطباعة...
+                    {t('common.printing')}
                   </>
                 ) : (
                   <>
                     <Printer className="w-4 h-4" />
-                    تأكيد الطباعة
+                    {t('printLogs.confirmPrint')}
                   </>
                 )}
               </button>
