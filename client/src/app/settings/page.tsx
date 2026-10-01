@@ -473,7 +473,7 @@ export default function SettingsPage() {
             value={soapApiEndpoint}
             onChange={(e) => setSoapApiEndpoint(e.target.value)}
             disabled={soapApiLoading || soapApiSaving}
-            placeholder="http://localhost:5050:8080/FCUBSAccService"
+            placeholder="http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService"
           />
 
           <div className="flex flex-wrap gap-3">

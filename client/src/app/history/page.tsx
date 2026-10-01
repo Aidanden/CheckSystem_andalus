@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { formatDateMedium } from '@/utils/locale';
 import { useTranslation } from '@/i18n/I18nProvider';
+import apiClient from '@/lib/api/client';
 
 interface PrintOperation {
   id: number;
@@ -54,25 +55,14 @@ export default function HistoryPage() {
         return;
       }
 
-      const response = await fetch('http://localhost:5050/api/printing/history', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
+      const { data } = await apiClient.get<PrintOperation[]>('/printing/history');
+      setOperations(data);
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
         localStorage.removeItem('token');
         router.push('/login');
         return;
       }
-
-      if (!response.ok) {
-        throw new Error(t('history.fetchFailed'));
-      }
-
-      const data = await response.json();
-      setOperations(data);
-    } catch (err) {
       setError(err instanceof Error ? err.message : t('history.loadError'));
     } finally {
       setLoading(false);
@@ -114,24 +104,11 @@ export default function HistoryPage() {
         return;
       }
 
-      const response = await fetch('http://localhost:5050/api/printing/print', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          account_number: reprintModal.operation.accountNumber,
-          serial_from: reprintModal.serialFrom,
-          serial_to: reprintModal.serialTo,
-        }),
+      const { data } = await apiClient.post('/printing/print', {
+        account_number: reprintModal.operation.accountNumber,
+        serial_from: reprintModal.serialFrom,
+        serial_to: reprintModal.serialTo,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || t('history.reprintFailed'));
-      }
 
       setSuccess(t('history.reprintSuccess'));
 
@@ -139,14 +116,11 @@ export default function HistoryPage() {
       if (data.pdfPath) {
         const filename =
           data.pdfPath.split('\\').pop() || data.pdfPath.split('/').pop();
-        const downloadUrl = `http://localhost:5050/api/printing/download/${filename}`;
         try {
-          const res = await fetch(downloadUrl, {
-            headers: { Authorization: `Bearer ${token}` },
+          const res = await apiClient.get(`/printing/download/${filename}`, {
+            responseType: 'blob',
           });
-          if (!res.ok) throw new Error('Failed to download PDF');
-          const blob = await res.blob();
-          const blobUrl = window.URL.createObjectURL(blob);
+          const blobUrl = window.URL.createObjectURL(res.data);
           window.open(blobUrl, '_blank');
         } catch (e) {
           console.error('Download failed', e);
@@ -160,8 +134,12 @@ export default function HistoryPage() {
       setTimeout(() => {
         closeReprintModal();
       }, 2000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('history.reprintError'));
+    } catch (err: any) {
+      const apiError =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        (err instanceof Error ? err.message : null);
+      setError(apiError || t('history.reprintError'));
     } finally {
       setLoading(false);
     }
