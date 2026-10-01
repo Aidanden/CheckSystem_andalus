@@ -43,7 +43,8 @@ export class PrintSettingsController {
       });
     } catch (error) {
       console.error('Error saving print settings:', error);
-      res.status(500).json({ error: 'Failed to save print settings' });
+      const message = error instanceof Error ? error.message : 'Failed to save print settings';
+      res.status(500).json({ error: message });
     }
   }
 }

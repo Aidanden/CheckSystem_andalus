@@ -192,7 +192,9 @@ export default function SettingsPage() {
 
       if (!token) return;
 
-      const apiBase = (process.env.NEXT_PUBLIC_API_URL?.trim() || '/api').replace(/\/$/, '');
+      const configured = (process.env.NEXT_PUBLIC_API_URL || '').trim().replace(/\/$/, '');
+      const apiBase =
+        !configured || /localhost|127\.0\.0\.1/i.test(configured) ? '/api' : configured;
       const response = await fetch(`${apiBase}/print-settings/${activeTab}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -257,26 +259,50 @@ export default function SettingsPage() {
         return;
       }
 
-      const apiBase = (process.env.NEXT_PUBLIC_API_URL?.trim() || '/api').replace(/\/$/, '');
+      // Never call localhost from the browser in production
+      const configured = (process.env.NEXT_PUBLIC_API_URL || '').trim().replace(/\/$/, '');
+      const apiBase =
+        !configured || /localhost|127\.0\.0\.1/i.test(configured) ? '/api' : configured;
+
+      const payload = {
+        ...currentSettings,
+        printMode: currentSettings.printMode === 'sheet3' ? 'sheet3' : 'single',
+        accountNumber: currentSettings.accountNumber ?? {
+          x: 117.5,
+          y: 10,
+          fontSize: 14,
+          align: 'center' as const,
+        },
+      };
+
       const response = await fetch(`${apiBase}/print-settings`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(currentSettings),
+        body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
 
       if (response.ok) {
         setSuccess(t('settings.settingsSaved'));
       } else {
-        setError(data.error || t('settings.failedSaveSettings'));
+        setError(data?.error || `${t('settings.failedSaveSettings')} (${response.status})`);
       }
-    } catch (err) {
-      setError(t('settings.failedSaveSettings'));
+    } catch (err: any) {
       console.error('Error saving settings:', err);
+      setError(
+        err?.message
+          ? `${t('settings.failedSaveSettings')}: ${err.message}`
+          : t('settings.failedSaveSettings')
+      );
     } finally {
       setLoading(false);
     }
