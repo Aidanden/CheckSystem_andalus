@@ -1,26 +1,14 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
 
 /**
- * Resolve API base URL for the browser.
- * Never use localhost/127.0.0.1 from the user's machine — that breaks production.
- * Prefer same-origin `/api` (Next.js rewrites to Express).
+ * Always call same-origin `/api` from the browser.
+ * Next.js rewrites proxy to Express (API_INTERNAL_URL).
+ * Never use localhost — that breaks remote production users.
  */
-function resolveApiUrl(): string {
-  const configured = (process.env.NEXT_PUBLIC_API_URL || '').trim();
-
-  if (typeof window !== 'undefined') {
-    if (!configured || /localhost|127\.0\.0\.1/i.test(configured)) {
-      return '/api';
-    }
-  }
-
-  return configured || '/api';
-}
-
-const API_URL = resolveApiUrl();
+const BROWSER_API_BASE = '/api';
 
 const apiClient: AxiosInstance = axios.create({
-  baseURL: API_URL,
+  baseURL: BROWSER_API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -29,12 +17,15 @@ const apiClient: AxiosInstance = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    // Force same-origin even if an old bundle tried to override baseURL
+    if (typeof window !== 'undefined') {
+      config.baseURL = BROWSER_API_BASE;
+    }
 
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-
     return config;
   },
   (error) => Promise.reject(error)
@@ -43,13 +34,10 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        // Don't redirect away from the login page itself
-        if (!window.location.pathname.startsWith('/login')) {
-          window.location.href = '/login';
-        }
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
       }
     }
     return Promise.reject(error);

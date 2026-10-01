@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   description: 'نظام طباعة الشيكات',
 };
 
+// Prevent static prerender crashes with Redux/i18n client providers on some hosts
+export const dynamic = 'force-dynamic';
+
 const localeBootScript = `
 (function(){
   try {
