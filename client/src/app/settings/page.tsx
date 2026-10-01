@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Settings as SettingsIcon, Save, RotateCcw, Printer, RefreshCw } from 'lucide-react';
 import { systemSettingsService } from '@/lib/api';
+import apiClient from '@/lib/api/client';
 import renderCheckbookHtml from '@/lib/utils/printRenderer';
 import { useTranslation } from '@/i18n/I18nProvider';
 
@@ -189,32 +190,22 @@ export default function SettingsPage() {
     try {
       setInitialLoading(true);
       const token = localStorage.getItem('token');
-
       if (!token) return;
 
-      const configured = (process.env.NEXT_PUBLIC_API_URL || '').trim().replace(/\/$/, '');
-      const apiBase =
-        !configured || /localhost|127\.0\.0\.1/i.test(configured) ? '/api' : configured;
-      const response = await fetch(`${apiBase}/print-settings/${activeTab}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
+      const { data } = await apiClient.get(`/print-settings/${activeTab}`);
+      const normalized = {
+        ...data,
+        printMode: data.printMode === 'sheet3' ? 'sheet3' : 'single',
+        accountNumber: data.accountNumber ?? {
+          x: 117.5,
+          y: 10,
+          fontSize: 14,
+          align: 'center' as const,
         },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const normalized = {
-          ...data,
-          printMode: data.printMode === 'sheet3' ? 'sheet3' : 'single',
-        };
-        if (activeTab === 1) {
-          setIndividualSettings(normalized);
-        } else if (activeTab === 2) {
-          setCorporateSettings(normalized);
-        } else {
-          setBankStaffSettings(normalized);
-        }
-      }
+      };
+      if (activeTab === 1) setIndividualSettings(normalized);
+      else if (activeTab === 2) setCorporateSettings(normalized);
+      else setBankStaffSettings(normalized);
     } catch (err) {
       console.error('Error loading settings:', err);
     } finally {
@@ -240,7 +231,6 @@ export default function SettingsPage() {
   };
 
   const updatePrintMode = (printMode: 'single' | 'sheet3') => {
-    // Apply to all account-type tabs so print mode is not lost when printing another type
     setIndividualSettings((prev) => ({ ...prev, printMode }));
     setCorporateSettings((prev) => ({ ...prev, printMode }));
     setBankStaffSettings((prev) => ({ ...prev, printMode }));
@@ -253,56 +243,43 @@ export default function SettingsPage() {
 
     try {
       const token = localStorage.getItem('token');
-
       if (!token) {
         setError(t('settings.pleaseSignIn'));
         return;
       }
 
-      // Never call localhost from the browser in production
-      const configured = (process.env.NEXT_PUBLIC_API_URL || '').trim().replace(/\/$/, '');
-      const apiBase =
-        !configured || /localhost|127\.0\.0\.1/i.test(configured) ? '/api' : configured;
-
       const payload = {
-        ...currentSettings,
+        accountType: currentSettings.accountType,
+        checkWidth: Number(currentSettings.checkWidth),
+        checkHeight: Number(currentSettings.checkHeight),
         printMode: currentSettings.printMode === 'sheet3' ? 'sheet3' : 'single',
+        branchName: currentSettings.branchName,
+        serialNumber: currentSettings.serialNumber,
         accountNumber: currentSettings.accountNumber ?? {
           x: 117.5,
           y: 10,
           fontSize: 14,
           align: 'center' as const,
         },
+        checkSequence: currentSettings.checkSequence,
+        accountHolderName: currentSettings.accountHolderName,
+        micrLine: currentSettings.micrLine,
       };
 
-      const response = await fetch(`${apiBase}/print-settings`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      let data: any = null;
-      try {
-        data = await response.json();
-      } catch {
-        data = null;
-      }
-
-      if (response.ok) {
-        setSuccess(t('settings.settingsSaved'));
-      } else {
-        setError(data?.error || `${t('settings.failedSaveSettings')} (${response.status})`);
-      }
+      await apiClient.post('/print-settings', payload);
+      setSuccess(t('settings.settingsSaved'));
     } catch (err: any) {
       console.error('Error saving settings:', err);
-      setError(
-        err?.message
-          ? `${t('settings.failedSaveSettings')}: ${err.message}`
-          : t('settings.failedSaveSettings')
-      );
+      const apiError =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        (err?.code === 'ERR_NETWORK'
+          ? 'Network error — API unreachable from browser'
+          : null) ||
+        err?.message ||
+        t('settings.failedSaveSettings');
+      const status = err?.response?.status ? ` (${err.response.status})` : '';
+      setError(`${apiError}${status}`);
     } finally {
       setLoading(false);
     }

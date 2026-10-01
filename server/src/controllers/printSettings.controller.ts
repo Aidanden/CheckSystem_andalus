@@ -22,24 +22,18 @@ export class PrintSettingsController {
 
   static async saveSettings(req: AuthRequest, res: Response): Promise<void> {
     try {
-      if (!req.user?.isAdmin) {
-        res.status(403).json({ error: 'Admin access required' });
-        return;
-      }
-
       const data = req.body;
-      
-      // Validate account type
-      if (![1, 2, 3, 4].includes(data.accountType)) {
+
+      if (![1, 2, 3, 4].includes(Number(data?.accountType))) {
         res.status(400).json({ error: 'Invalid account type' });
         return;
       }
 
       const settings = await PrintSettingsService.saveSettings(data);
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: 'Settings saved successfully',
-        settings 
+        settings,
       });
     } catch (error) {
       console.error('Error saving print settings:', error);

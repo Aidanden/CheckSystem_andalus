@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { PrintSettingsController } from '../controllers/printSettings.controller';
-import { authenticate, requireAdmin } from '../middleware/auth.middleware';
+import { authenticate, requirePermission } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -11,13 +11,12 @@ router.get(
   PrintSettingsController.getSettings
 );
 
-// Save settings (admin only)
+// Save settings — admins or users with SYSTEM_SETTINGS
 router.post(
   '/',
   authenticate,
-  requireAdmin,
+  requirePermission('SYSTEM_SETTINGS'),
   PrintSettingsController.saveSettings
 );
 
 export default router;
-

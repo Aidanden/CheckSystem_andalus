@@ -7,6 +7,11 @@ import {
   DEFAULT_INDIVIDUAL_SETTINGS,
 } from '../types/printSettings.types';
 
+function finite(value: unknown, fallback: number): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 export class PrintSettingsModel {
   static async findByAccountType(accountType: number): Promise<PrintSettings | null> {
     return prisma.printSettings.findUnique({
@@ -17,10 +22,15 @@ export class PrintSettingsModel {
   /** Keep sheet/single mode consistent across individual, corporate, and employee. */
   static async syncPrintModeForRegularTypes(printMode: string): Promise<void> {
     const mode = printMode === 'sheet3' ? 'sheet3' : 'single';
-    await prisma.printSettings.updateMany({
-      where: { accountType: { in: [1, 2, 3] } },
-      data: { printMode: mode },
-    });
+    try {
+      await prisma.printSettings.updateMany({
+        where: { accountType: { in: [1, 2, 3] } },
+        data: { printMode: mode },
+      });
+    } catch (error) {
+      // Older DBs without print_mode column — ignore
+      console.warn('syncPrintModeForRegularTypes skipped:', error);
+    }
   }
 
   static async upsert(data: {
@@ -52,8 +62,6 @@ export class PrintSettingsModel {
     micrLineY: number;
     micrLineFontSize: number;
     micrLineAlign: string;
-
-    // Specialized fields for individual certified check printing
     beneficiaryNameX?: number;
     beneficiaryNameY?: number;
     beneficiaryNameFontSize?: number;
@@ -80,80 +88,80 @@ export class PrintSettingsModel {
     checkNumberAlign?: string;
   }): Promise<PrintSettings> {
     const printMode = data.printMode === 'sheet3' ? 'sheet3' : 'single';
-    return prisma.printSettings.upsert({
-      where: { accountType: data.accountType },
-      update: {
-        checkWidth: data.checkWidth,
-        checkHeight: data.checkHeight,
-        printMode,
-        branchNameX: data.branchNameX,
-        branchNameY: data.branchNameY,
-        branchNameFontSize: data.branchNameFontSize,
-        branchNameAlign: data.branchNameAlign,
-        serialNumberX: data.serialNumberX,
-        serialNumberY: data.serialNumberY,
-        serialNumberFontSize: data.serialNumberFontSize,
-        serialNumberAlign: data.serialNumberAlign,
-        accountNumberX: data.accountNumberX,
-        accountNumberY: data.accountNumberY,
-        accountNumberFontSize: data.accountNumberFontSize,
-        accountNumberAlign: data.accountNumberAlign,
-        checkSequenceX: data.checkSequenceX,
-        checkSequenceY: data.checkSequenceY,
-        checkSequenceFontSize: data.checkSequenceFontSize,
-        checkSequenceAlign: data.checkSequenceAlign,
-        accountHolderNameX: data.accountHolderNameX,
-        accountHolderNameY: data.accountHolderNameY,
-        accountHolderNameFontSize: data.accountHolderNameFontSize,
-        accountHolderNameAlign: data.accountHolderNameAlign,
-        micrLineX: data.micrLineX,
-        micrLineY: data.micrLineY,
-        micrLineFontSize: data.micrLineFontSize,
-        micrLineAlign: data.micrLineAlign,
 
-        // Specialized fields
-        beneficiaryNameX: data.beneficiaryNameX,
-        beneficiaryNameY: data.beneficiaryNameY,
-        beneficiaryNameFontSize: data.beneficiaryNameFontSize,
-        beneficiaryNameAlign: data.beneficiaryNameAlign,
-        amountNumbersX: data.amountNumbersX,
-        amountNumbersY: data.amountNumbersY,
-        amountNumbersFontSize: data.amountNumbersFontSize,
-        amountNumbersAlign: data.amountNumbersAlign,
-        amountWordsX: data.amountWordsX,
-        amountWordsY: data.amountWordsY,
-        amountWordsFontSize: data.amountWordsFontSize,
-        amountWordsAlign: data.amountWordsAlign,
-        issueDateX: data.issueDateX,
-        issueDateY: data.issueDateY,
-        issueDateFontSize: data.issueDateFontSize,
-        issueDateAlign: data.issueDateAlign,
-        checkTypeX: data.checkTypeX,
-        checkTypeY: data.checkTypeY,
-        checkTypeFontSize: data.checkTypeFontSize,
-        checkTypeAlign: data.checkTypeAlign,
-        checkNumberX: data.checkNumberX,
-        checkNumberY: data.checkNumberY,
-        checkNumberFontSize: data.checkNumberFontSize,
-        checkNumberAlign: data.checkNumberAlign,
-      },
-      create: { ...data, printMode },
-    });
+    const baseUpdate = {
+      checkWidth: finite(data.checkWidth, 235),
+      checkHeight: finite(data.checkHeight, 86),
+      branchNameX: finite(data.branchNameX, 20),
+      branchNameY: finite(data.branchNameY, 10),
+      branchNameFontSize: Math.round(finite(data.branchNameFontSize, 14)),
+      branchNameAlign: data.branchNameAlign || 'left',
+      serialNumberX: finite(data.serialNumberX, 200),
+      serialNumberY: finite(data.serialNumberY, 18),
+      serialNumberFontSize: Math.round(finite(data.serialNumberFontSize, 12)),
+      serialNumberAlign: data.serialNumberAlign || 'right',
+      accountNumberX: finite(data.accountNumberX, 117.5),
+      accountNumberY: finite(data.accountNumberY, 10),
+      accountNumberFontSize: Math.round(finite(data.accountNumberFontSize, 14)),
+      accountNumberAlign: data.accountNumberAlign || 'center',
+      checkSequenceX: finite(data.checkSequenceX, 20),
+      checkSequenceY: finite(data.checkSequenceY, 18),
+      checkSequenceFontSize: Math.round(finite(data.checkSequenceFontSize, 12)),
+      checkSequenceAlign: data.checkSequenceAlign || 'left',
+      accountHolderNameX: finite(data.accountHolderNameX, 20),
+      accountHolderNameY: finite(data.accountHolderNameY, 70),
+      accountHolderNameFontSize: Math.round(finite(data.accountHolderNameFontSize, 10)),
+      accountHolderNameAlign: data.accountHolderNameAlign || 'left',
+      micrLineX: finite(data.micrLineX, 117.5),
+      micrLineY: finite(data.micrLineY, 80),
+      micrLineFontSize: Math.round(finite(data.micrLineFontSize, 12)),
+      micrLineAlign: data.micrLineAlign || 'center',
+    };
+
+    const createData = {
+      accountType: data.accountType,
+      ...baseUpdate,
+      printMode,
+    };
+
+    try {
+      return await prisma.printSettings.upsert({
+        where: { accountType: data.accountType },
+        update: { ...baseUpdate, printMode },
+        create: createData,
+      });
+    } catch (error: any) {
+      const msg = String(error?.message || error);
+      // Fallback if print_mode column is missing in production DB
+      if (/print_mode|printMode|Unknown argument/i.test(msg)) {
+        console.warn('print_mode column missing — saving without printMode field');
+        return prisma.printSettings.upsert({
+          where: { accountType: data.accountType },
+          update: baseUpdate,
+          create: {
+            accountType: data.accountType,
+            ...baseUpdate,
+          } as any,
+        });
+      }
+      throw error;
+    }
   }
 
   static async getOrDefault(accountType: number): Promise<any> {
     const settings = await this.findByAccountType(accountType);
 
     if (settings) {
-      // للشيكات المصدقة (accountType: 4)، لا نعرض رقم الحساب
       const isCertified = settings.accountType === 4;
+      const printMode =
+        (settings as any).printMode === 'sheet3' ? 'sheet3' : 'single';
 
       return {
         id: settings.id,
         accountType: settings.accountType,
         checkWidth: settings.checkWidth,
         checkHeight: settings.checkHeight,
-        printMode: settings.printMode === 'sheet3' ? 'sheet3' : 'single',
+        printMode,
         branchName: {
           x: settings.branchNameX,
           y: settings.branchNameY,
@@ -166,12 +174,14 @@ export class PrintSettingsModel {
           fontSize: settings.serialNumberFontSize,
           align: settings.serialNumberAlign,
         },
-        accountNumber: isCertified ? null : {
-          x: settings.accountNumberX ?? 117.5,
-          y: settings.accountNumberY ?? 10,
-          fontSize: settings.accountNumberFontSize ?? 14,
-          align: settings.accountNumberAlign ?? 'center',
-        },
+        accountNumber: isCertified
+          ? null
+          : {
+              x: settings.accountNumberX ?? 117.5,
+              y: settings.accountNumberY ?? 10,
+              fontSize: settings.accountNumberFontSize ?? 14,
+              align: settings.accountNumberAlign ?? 'center',
+            },
         checkSequence: {
           x: settings.checkSequenceX ?? 20,
           y: settings.checkSequenceY ?? 18,
@@ -190,8 +200,6 @@ export class PrintSettingsModel {
           fontSize: settings.micrLineFontSize,
           align: settings.micrLineAlign,
         },
-
-        // Specialized fields
         beneficiaryNameX: settings.beneficiaryNameX,
         beneficiaryNameY: settings.beneficiaryNameY,
         beneficiaryNameFontSize: settings.beneficiaryNameFontSize,
@@ -227,22 +235,11 @@ export class PrintSettingsModel {
       };
     }
 
-    // Return defaults if not found
-    if (accountType === 1) {
-      return { ...DEFAULT_INDIVIDUAL_SETTINGS };
-    }
-
-    if (accountType === 2) {
-      return { ...DEFAULT_CORPORATE_SETTINGS };
-    }
-
-    if (accountType === 3) {
-      return { ...DEFAULT_BANK_STAFF_SETTINGS };
-    }
-
+    if (accountType === 1) return { ...DEFAULT_INDIVIDUAL_SETTINGS };
+    if (accountType === 2) return { ...DEFAULT_CORPORATE_SETTINGS };
+    if (accountType === 3) return { ...DEFAULT_BANK_STAFF_SETTINGS };
     if (accountType === 4) {
       const certifiedSettings = { ...DEFAULT_CERTIFIED_SETTINGS };
-      // للشيكات المصدقة، لا نعرض رقم الحساب
       (certifiedSettings as any).accountNumber = null;
       return certifiedSettings;
     }
@@ -250,4 +247,3 @@ export class PrintSettingsModel {
     return { ...DEFAULT_BANK_STAFF_SETTINGS };
   }
 }
-
